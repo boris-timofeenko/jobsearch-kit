@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Job Autofill",
+  "version": "0.1.0",
+  "description": "Fills job application forms (Greenhouse, Lever, Ashby, Workday, LinkedIn Easy Apply...) from your CV profile. Never submits.",
+  "icons": { "48": "icons/icon-48.png", "96": "icons/icon-96.png", "128": "icons/icon-128.png" },
+  "action": {
+    "default_title": "Заполнить форму отклика",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png" }
+  },
+  "commands": {
+    "_execute_action": { "suggested_key": { "default": "Alt+Shift+J" }, "description": "Заполнить форму отклика" }
+  },
+  "background": { "scripts": ["background.js"], "persistent": false },
+  "options_ui": { "page": "options.html", "open_in_tab": true },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "optional_host_permissions": ["<all_urls>"],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "job-autofill@jobsearch-kit.local",
+      "strict_min_version": "128.0",
+      "data_collection_permissions": { "required": ["none"] }
+    }
+  }
+}

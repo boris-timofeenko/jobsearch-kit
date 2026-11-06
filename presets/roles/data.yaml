@@ -1,0 +1,48 @@
+role:
+  # Пресет: данные — Data Engineer, аналитик, Data Scientist / ML Engineer. Оставь в queries и title_include
+  # только свои направления: инженер данных и аналитик — разные роли.
+  name: "Data Engineer / Data Scientist / аналитик данных"
+  definition: "работа с данными: пайплайны и хранилища (data engineering), аналитика и BI, data science и ML-модели в продакшене"
+  not_this_role: >
+    ввод данных и data entry, разметка данных, бухгалтерия и финансовый анализ, бизнес-аналитик без работы с
+    данными (требования, процессы), data quality в производстве, DBA без аналитики, техподдержка
+  strengths: ""
+  small_gap: "другой инструмент того же класса (Snowflake вместо BigQuery, Airflow вместо Dagster), другой домен"
+
+  queries: [Data Engineer, Data Scientist, Data Analyst, Machine Learning Engineer, Analytics Engineer,
+            Senior Data Engineer, ML Engineer, BI Developer]
+  keywords: [data engineer, data scientist, data analyst, machine learning, analytics]
+  categories:
+    remotive: data
+    jobicy: data
+    weworkremotely: [remote-programming-jobs]
+    themuse: Data and Analytics
+    arbeitsagentur: [Data Engineer, Data Scientist, Datenanalyst]
+
+  title_include:
+    - '\b(data|analytics|bi|machine learning|ml|ai)\b[^,|]{0,20}\b(engineer|scientist|analyst|developer|architect)\b'
+    - '\b(data scientist|data engineer|analytics engineer|mlops|data analyst)\b'
+  title_exclude:
+    - '\b(data entry|data annotat\w*|annotator|labell?er|data quality (inspector|technician)|qa|tester|sdet)\b'
+    - '\b(financial analyst|business analyst|credit analyst|risk analyst|accountant|bookkeeper|sales|customer|recruiter|marketing manager|account)\b'
+    - '\b(do not apply|test job|testjob)\b'
+  title_boost:
+    '\b(data engineer|data scientist|machine learning|ml engineer|analytics engineer)\b': 8
+
+  stack:
+    python: 2
+    sql: 3
+    'spark|pyspark|databricks': 2
+    'airflow|dagster|prefect': 2
+    'dbt': 2
+    'snowflake|bigquery|redshift': 2
+    'kafka|flink': 1
+    'pandas|scikit|pytorch|tensorflow': 1
+    'tableau|power bi|looker': 1
+    'relocation|visa sponsorship|highly skilled migrant|kennismigrant|blue card': 6
+  focus: []
+  penalties: []
+  off_domain:
+    name: "лаборатория / не IT-данные"
+    title: '\b(laborator\w*|lab|clinical|chemist|biolog\w*|pharma|gmp|manufacturing|production)\b'
+    desc: '\b(gmp|glp|cleanroom|hplc|wet lab)\b'

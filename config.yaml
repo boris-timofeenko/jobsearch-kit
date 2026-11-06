@@ -1,0 +1,71 @@
+# Общие настройки источников, лимитов, LLM и Telegram. В git: не правь этот файл, переопределяй в my/config.yaml
+# (слияние по ключам; список заменяет список целиком). Всё про человека, роль и страны — в my/profile.yaml.
+linkedin:
+  enabled: true
+  time_filter: r604800        # окно первого прогона: неделя. Дальше окно каждого запроса считается само (ниже)
+  # окно каждого запроса = max(--time-filter, время с начала его последнего полного поиска + window_margin), не больше
+  # window_max: пропущенный или оборванный прогон дыры не оставляет, следующий сам захватит пропуск (таблица coverage)
+  window_margin: 7200         # запас на вакансии, которые LinkedIn показывает в поиске с опозданием
+  window_max: 259200          # 3 дня
+  search_budget_min: {fast: 70, deep: 340}   # дольше — оставшиеся запросы откладываются до следующего прогона
+  detail_budget_min: {fast: 25, deep: 60}    # описания сверх бюджета догрузит backfill следующего прогона
+  max_pages: 100              # LinkedIn отдаёт по 10 карточек, до ~1000 на запрос; останавливаемся на пустой странице
+  idle_pages: 5               # ...или после 5 страниц подряд без единого заголовка по роли (хвост выдачи — мусор)
+  detail_fetch_limit: 600     # описания грузятся для всех новых; основная страна первой
+  backfill_limit: 200         # старые записи без описания, дозагружаемые за прогон
+  # queries — по умолчанию role.queries из профиля. locations — по умолчанию из target: основная страна со всеми
+  # запросами, остальные страны и «European Union» (remote) с первыми четырьмя запросами и потолком 50 страниц.
+  # Своё задаётся в my/config.yaml, формат: - {name: Germany, remote: false, max_pages: 50, queries: [...]}
+  queries: []
+  locations: []
+
+# Доски компаний (публичные API ATS). Списки в boards/ общие и не зависят от роли: заголовки фильтрует профиль.
+# Первое упоминание ats+slug выигрывает, поэтому свой список первым. Выбор под страны — в my/config.yaml.
+company_files:
+  - my/companies.yaml         # свои компании (необязательно, файла может не быть)
+  - boards/curated.yaml       # ~220 софтверных компаний: Нидерланды, ЕС, remote-first
+board_workers: 8              # доски опрашиваются параллельно
+
+# Агрегаторы: бесплатные, без ключей, кроме adzuna (ADZUNA_APP_ID/KEY в .env; ищет в основной стране).
+# Есть ещё, включаются в my/config.yaml: iamexpat и undutchables (только Нидерланды), arbeitsagentur (только
+# Германия: немецкие тексты потом отсекает правило языка, если немецкого нет).
+aggregators: [arbeitnow, landingjobs, himalayas, remotive, remoteok, workingnomads, weworkremotely, themuse, jobicy,
+              adzuna, workable_search]
+aggregators_deep: [hiringcafe]   # только в ночном deep-прогоне: поиск по индексу всех ATS-досок сразу
+
+hiringcafe:                   # hiringcafe.com: официальный read-only MCP → Chrome → Jina → ChatGPT MCP
+  queries: []                 # по умолчанию — role.hiringcafe_queries или первые два role.queries
+  countries: []               # по умолчанию — все целевые страны профиля
+  limit: 25
+  max_per_company: 5
+  pages: 3                    # потолок SSR-страниц только для Jina fallback
+  chrome_display: "99"        # резервный транспорт через настоящий Chrome (только сервер с Xvfb, HC_CHROME в .env)
+  chrome_profile: ""
+
+telegram:
+  enabled: false              # на сервере и в расписании включается флагом --notify
+  min_fit: 4                  # в дайджест идут только новые вакансии, прошедшие LLM с fit >= min_fit
+  summary_always: true        # первым сообщением — сводка прогона, даже если карточек нет
+  quiet_when_empty: false     # true — молчать совсем, когда нет ни одной новой карточки
+  max_per_company: 2          # не больше N карточек от одной компании за прогон
+  quiet_hours: "00:00-08:00"  # сообщения в эти часы приходят без звука
+
+llm:
+  enabled: true
+  backend: auto               # auto | api | cli | off. api = ANTHROPIC_API_KEY, cli = локальный `claude` по подписке
+  model_api: claude-sonnet-5
+  model_cli: sonnet
+  model_cli_country: sonnet   # для вакансий в целевых странах можно поставить opus (их немного)
+  model_api_country: claude-sonnet-5
+  max_per_run: 300            # верхняя граница оценок за прогон
+  min_score_remote: 45        # треки remote и eu оцениваем только от этого score; целевые страны — всегда
+  workers: 4
+  skip_low_yield_after: 20    # компания с N+ оценками и ни одной fit >= 4 (и без твоих статусов) на LLM больше не идёт
+
+cv:                           # кнопка «📄 CV под вакансию» в боте и `jobsearch cv <id>` — нужен LaTeX-исходник резюме
+  tex: my/cv.tex
+  bank: my/cv_bank.yaml
+  model_cli: opus             # одна оценка на клик, поэтому самая сильная модель
+  model_api: claude-opus-5
+  max_edits: 5
+  max_pages: 2

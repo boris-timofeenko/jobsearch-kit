@@ -1,0 +1,18 @@
+[Unit]
+Description=jobsearch Telegram bot (status buttons)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jobsearch
+WorkingDirectory=/opt/jobsearch
+EnvironmentFile=/opt/jobsearch/.env
+# claude CLI (native installer) для «CV под вакансию» по подписке
+Environment=PATH=/home/jobsearch/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/opt/jobsearch/.venv/bin/python -m jobsearch bot
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

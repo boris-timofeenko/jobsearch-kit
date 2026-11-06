@@ -1,0 +1,83 @@
+# Крупные работодатели Германии (собрано 06.11.2026). Подключается в my/config.yaml → company_files.
+# rmk / beesite / phenom — корпоративные сайты без публичного API всей доски: читаются поиском по ключевым словам
+# (role.keywords), slug — хост сайта или поискового API. Описание грузится со страницы вакансии (ats.detail_page).
+
+# --- концерны: SAP SuccessFactors (rmk)
+- {name: adidas, ats: rmk, slug: jobs.adidas-group.com}
+- {name: Bertelsmann, ats: rmk, slug: jobsearch.createyourowncareer.com}    # и Arvato
+- {name: GFT Technologies, ats: rmk, slug: jobs.gft.com}
+- {name: 1&1, ats: rmk, slug: career.1and1.org}
+- {name: Volkswagen Group, ats: rmk, slug: jobs.volkswagen-group.com}       # сюда ведёт и Cariad
+- {name: ZF, ats: rmk, slug: jobs.zf.com}
+- {name: adesso, ats: rmk, slug: jobs.adesso-group.com}
+- {name: DZ Bank, ats: rmk, slug: jobs.dzbank.de}
+- {name: MediaMarktSaturn, ats: rmk, slug: careers.mediamarktsaturn.com}
+- {name: Telefónica, ats: rmk, slug: jobs.telefonica.com}
+- {name: Hannover Re, ats: rmk, slug: jobs.hannover-re.com}
+- {name: Schaeffler, ats: rmk, slug: jobs.schaeffler.com}
+# --- Milch & Zucker BeeSite (beesite): хост поискового API
+- {name: Mercedes-Benz, ats: beesite, slug: jobs.api.mercedes-benz.com}
+- {name: Porsche, ats: beesite, slug: porsche-beesite-production-gjb.app.beesite.de}
+- {name: Daimler Truck, ats: beesite, slug: daimler-truck-beesite-production-gjb.app.beesite.de}
+- {name: Commerzbank, ats: beesite, slug: coba-beesite-production-gjb.app.beesite.de}
+# --- Phenom (phenom)
+- {name: Allianz, ats: phenom, slug: careers.allianz.com}                  # и Allianz Technology
+- {name: DHL Group, ats: phenom, slug: careers.dhl.com}
+- {name: Siemens Healthineers, ats: phenom, slug: careers.siemens-healthineers.com}
+- {name: Merck KGaA, ats: phenom, slug: careers.merckgroup.com}
+# --- Workday
+- {name: Airbus, ats: workday, slug: ag/wd3/Airbus}
+- {name: Springer Nature, ats: workday, slug: springernature/wd3/SpringerNatureCareers}
+- {name: CompuGroup Medical, ats: workday, slug: cgm/wd3/cgm}
+- {name: DATEV, ats: workday, slug: datev/wd3/Datev_Careers}
+- {name: GEA, ats: workday, slug: gea/wd3/GEACareers}
+- {name: Brenntag, ats: workday, slug: brenntag/wd3/Brenntag_Jobs}
+- {name: Puma, ats: workday, slug: puma/wd502/Jobs_at_Puma}
+# --- найдены руками на поддерживаемых ATS
+- {name: Bosch, ats: smartrecruiters, slug: BoschGroup}                    # 5000+ вакансий: читается по ключевым словам
+- {name: Trade Republic, ats: greenhouse, slug: traderepublicbank}
+- {name: Taxfix, ats: ashby, slug: taxfix.com}
+
+# --- discover --file discovery/de_large.txt --area de: доски с вакансиями в Германии (N/M — в DE / всего)
+- {name: Aleph Alpha, ats: ashby, slug: alephalpha}   # 4/4 jobs in de
+- {name: Auto1, ats: smartrecruiters, slug: auto1}   # 49/500 jobs in de
+- {name: AVIV Group, ats: ashby, slug: aviv}   # 3/4 jobs in de
+- {name: Babbel, ats: ashby, slug: babbel}   # 8/10 jobs in de
+- {name: Billie, ats: ashby, slug: billie}   # 2/2 jobs in de
+- {name: Camunda, ats: ashby, slug: camunda}   # 3/51 jobs in de
+- {name: Celonis, ats: greenhouse, slug: celonis}   # 60/233 jobs in de
+- {name: Clark, ats: personio, slug: clark}   # 1/3 jobs in de
+- {name: Contentful, ats: greenhouse, slug: contentful}   # 4/29 jobs in de
+- {name: Continental, ats: smartrecruiters, slug: continental}   # 42/500 jobs in de
+- {name: DeepL, ats: ashby, slug: deepl}   # 2/9 jobs in de
+- {name: Delivery Hero, ats: smartrecruiters, slug: deliveryhero}   # 26/500 jobs in de
+- {name: Doctolib, ats: ashby, slug: doctolib}   # 68/151 jobs in de
+- {name: Enpal, ats: ashby, slug: enpal}   # 105/162 jobs in de
+- {name: Flix, ats: greenhouse, slug: flix}   # 54/153 jobs in de
+- {name: Forto, ats: ashby, slug: forto}   # 6/8 jobs in de
+- {name: GetYourGuide, ats: greenhouse, slug: getyourguide}   # 55/69 jobs in de
+- {name: Grover, ats: greenhouse, slug: grover}   # 10/10 jobs in de
+- {name: Helsing, ats: greenhouse, slug: helsing}   # 117/159 jobs in de
+- {name: Home24, ats: smartrecruiters, slug: home24}   # 9/9 jobs in de
+- {name: Immowelt, ats: ashby, slug: immowelt}   # 12/12 jobs in de
+- {name: IONOS, ats: greenhouse, slug: ionos}   # 43/49 jobs in de
+- {name: Isar Aerospace, ats: greenhouse, slug: isaraerospace}   # 114/139 jobs in de
+- {name: Konux, ats: greenhouse, slug: konux}   # 3/3 jobs in de
+- {name: Mobimeo, ats: personio, slug: mobimeo}   # 2/2 jobs in de
+- {name: MOIA, ats: greenhouse, slug: moia}   # 2/2 jobs in de
+- {name: Moss, ats: ashby, slug: moss}   # 24/33 jobs in de
+- {name: Omio, ats: smartrecruiters, slug: omio}   # 2/2 jobs in de
+- {name: ottonova, ats: personio, slug: ottonova}   # 8/8 jobs in de
+- {name: Pliant, ats: ashby, slug: pliant}   # 14/39 jobs in de
+- {name: Raisin, ats: greenhouse, slug: raisin}   # 22/31 jobs in de
+- {name: Scout24, ats: greenhouse, slug: scout24}   # 19/20 jobs in de
+- {name: Sixt, ats: smartrecruiters, slug: sixt}   # 128/500 jobs in de
+- {name: Solarisbank, ats: greenhouse, slug: solarisbank}   # 18/18 jobs in de
+- {name: Staffbase, ats: greenhouse, slug: staffbase}   # 16/28 jobs in de
+- {name: SumUp, ats: greenhouse, slug: sumup}   # 46/346 jobs in de
+- {name: TeamViewer, ats: teamtailor, slug: teamviewer}   # 10/100 jobs in de
+- {name: trivago, ats: greenhouse, slug: trivago}   # 17/17 jobs in de
+- {name: Vattenfall, ats: smartrecruiters, slug: vattenfall}   # 38/240 jobs in de
+- {name: Verivox, ats: personio, slug: verivox}   # 10/10 jobs in de
+- {name: Wandelbots, ats: personio, slug: wandelbots}   # 10/12 jobs in de
+- {name: Westwing, ats: personio, slug: westwing}   # 55/66 jobs in de

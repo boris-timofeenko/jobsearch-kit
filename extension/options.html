@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Job Autofill — настройки</title>
+<style>
+  :root { --bg: #fff; --fg: #1f2328; --muted: #656d76; --line: #d0d7de; --ok: #2e9d4e; --accent: #4e5a24; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1c1b22; --fg: #e6edf3; --muted: #9aa4ae; --line: #3a3f47; } }
+  body { background: var(--bg); color: var(--fg); font: 14px/1.5 -apple-system, system-ui, sans-serif; margin: 0; }
+  main { max-width: 720px; margin: 32px auto; padding: 0 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 28px 0 8px; }
+  p, li { color: var(--muted); }
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+  button, label.btn { font: inherit; padding: 5px 12px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--fg); cursor: pointer; }
+  input[type=file] { display: none; }
+  code { font-size: 12px; }
+  .ok { color: var(--ok); }
+  pre { white-space: pre-wrap; font-size: 12px; color: var(--muted); max-height: 260px; overflow: auto; margin: 8px 0 0; }
+  .legend span { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin: 0 4px 0 12px; vertical-align: -1px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Job Autofill</h1>
+  <p>Кнопка на панели (или <code>Alt+Shift+J</code>) заполняет пустые поля формы отклика данными из CV. Форму
+    расширение не отправляет.
+    <span class="legend"><span style="background:#2e9d4e"></span>заполнено<span style="background:#e08a00"></span>проверить<span style="background:#3b82f6"></span>не заполнено</span></p>
+
+  <h2>Профиль</h2>
+  <div class="card">
+    <div id="profileStatus">…</div>
+    <div class="row">
+      <label class="btn">Импортировать profile.json<input type="file" id="profileFile" accept=".json,application/json"></label>
+      <button id="profileReset">Сбросить к встроенному</button>
+    </div>
+    <pre id="profilePreview"></pre>
+  </div>
+  <p>profile.json собирается из CV командой <code>.venv/bin/python -m jobsearch autofill</code>; адрес, срок уведомления,
+    зарплата и ответы — в разделе <code>autofill:</code> файла <code>cv_bank.yaml</code>.</p>
+
+  <h2>CV для прикрепления</h2>
+  <div class="card">
+    <div id="cvStatus">…</div>
+    <div class="row">
+      <label class="btn">Выбрать PDF<input type="file" id="cvFile" accept=".pdf,application/pdf"></label>
+      <button id="cvReset">Сбросить к встроенному</button>
+      <label><input type="checkbox" id="attachCv" checked style="display:inline"> прикреплять CV автоматически</label>
+    </div>
+  </div>
+  <p>Сюда удобно положить CV, собранный под вакансию кнопкой «📄 CV под вакансию» в Telegram-боте.</p>
+</main>
+<script src="options.js"></script>
+</body>
+</html>

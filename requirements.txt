@@ -1,0 +1,7 @@
+requests
+beautifulsoup4
+pyyaml
+pydantic>=2
+anthropic
+pytest
+pillow

@@ -1,0 +1,168 @@
+# Каталог стран для target.country / target.countries в my/profile.yaml: там достаточно написать код («de»),
+# остальное берётся отсюда. Любое поле можно переопределить в профиле:
+#   target:
+#     country: {code: de, salary_floor_month: 4225, city: Munich}
+#
+# location_regex — как страна и её города пишутся в поле «локация» вакансии (на английском и на местном языке).
+# local_languages — языки страны: текст вакансии на нидерландском/немецком/французском отсекается, если этого языка
+#   нет в candidate.languages; для остальных языков решает модель по требованию в тексте.
+# salary_floor_month — месячный гросс в евро, ниже 90% которого вакансия отсекается, если зарплата указана.
+#   Это ОРИЕНТИРЫ визовых порогов на 2026 год (Blue Card и национальные схемы для IT), а не юридическая справка:
+#   пороги индексируются каждый год и зависят от возраста, диплома и региона. Перед настройкой проверь актуальную
+#   цифру на сайте миграционной службы. Если виза не нужна (гражданство ЕС), поставь сюда свой минимум.
+# visa_scheme — название схемы для рубрики модели. city — главный IT-город: модель оценивает вакансию «как будто
+#   она там», а The Muse ищет по нему. geo — координаты центра страны для резервного поиска hiring.cafe.
+# sponsor_register: ind — только Нидерланды: публичный реестр признанных спонсоров IND, по нему проверяется каждый
+#   работодатель. Для других стран такого открытого реестра нет.
+
+nl:
+  name: Netherlands
+  label: "🇳🇱 Нидерланды"
+  city: Amsterdam
+  location_regex: '\b(netherlands|nederland|holland|amsterdam|rotterdam|utrecht|eindhoven|the hague|den haag|groningen|leiden|delft|haarlem|amstelveen|hilversum|nijmegen|tilburg|breda|arnhem|zwolle|enschede|maastricht|almere|apeldoorn|hoofddorp|schiphol|veldhoven|''s-hertogenbosch|den bosch|amersfoort|zeist|\bnl\b)'
+  local_languages: [dutch]
+  salary_floor_month: 5942        # HSM (kennismigrant) 30+, без holiday allowance
+  salary_floor_under_30: 4357     # HSM до 30 лет; берётся, если candidate.birth_year моложе 30
+  visa_scheme: "HSM (kennismigrant)"
+  sponsor_register: ind
+  geo: [52.1326, 5.2913]
+
+de:
+  name: Germany
+  label: "🇩🇪 Германия"
+  city: Berlin
+  location_regex: '\b(germany|deutschland|berlin|munich|münchen|muenchen|hamburg|frankfurt|cologne|köln|koeln|düsseldorf|duesseldorf|stuttgart|leipzig|dresden|hannover|hanover|nuremberg|nürnberg|karlsruhe|bremen|dortmund|essen|bonn|mannheim|heidelberg|potsdam|walldorf|darmstadt|freiburg|münster|aachen)'  # без «de»: оно есть в «Île-de-France»
+  local_languages: [german]
+  salary_floor_month: 3828        # Blue Card для профессий с дефицитом кадров (IT), ~€45.9k в год; общий порог ~€50.7k
+  visa_scheme: "EU Blue Card"
+  geo: [51.1657, 10.4515]
+
+be:
+  name: Belgium
+  label: "🇧🇪 Бельгия"
+  city: Brussels
+  location_regex: '\b(belgium|belgië|belgie|belgique|brussels|brussel|bruxelles|antwerp|antwerpen|ghent|gent|leuven|mechelen|hasselt|liège|liege|namur|charleroi|bruges|brugge|kortrijk|flemish region|flanders|vlaanderen|wallonia|wallonie)'
+  local_languages: [dutch, french]
+  salary_floor_month: 4500        # Blue Card / single permit, порог свой у каждого региона
+  visa_scheme: "EU Blue Card / single permit"
+  geo: [50.5039, 4.4699]
+
+fr:
+  name: France
+  label: "🇫🇷 Франция"
+  city: Paris
+  location_regex: '\b(france|paris|lyon|marseille|toulouse|nantes|bordeaux|lille|nice|rennes|grenoble|montpellier|strasbourg|sophia antipolis|île-de-france|ile-de-france|la défense|la defense)'
+  local_languages: [french]
+  salary_floor_month: 4400
+  visa_scheme: "Passeport Talent / EU Blue Card"
+  geo: [46.6034, 1.8883]
+
+es:
+  name: Spain
+  label: "🇪🇸 Испания"
+  city: Madrid
+  location_regex: '\b(spain|españa|espana|madrid|barcelona|valencia|málaga|malaga|seville|sevilla|bilbao|zaragoza|alicante|palma|las palmas|granada|murcia|vigo|a coruña|la coruña|san sebastián|donostia)'
+  local_languages: [spanish]
+  salary_floor_month: 2800        # EU Blue Card; у визы высококвалифицированного специалиста порог на практике выше
+  visa_scheme: "Highly Qualified Professional / EU Blue Card"
+  geo: [40.4637, -3.7492]
+
+pt:
+  name: Portugal
+  label: "🇵🇹 Португалия"
+  city: Lisbon
+  location_regex: '\b(portugal|lisbon|lisboa|porto|braga|coimbra|aveiro|faro|funchal|setúbal|setubal|guimarães|guimaraes)'
+  local_languages: [portuguese]
+  salary_floor_month: 2000        # Tech Visa / Blue Card: ориентир, проверь
+  visa_scheme: "Tech Visa / EU Blue Card"
+  geo: [39.3999, -8.2245]
+
+ie:
+  name: Ireland
+  label: "🇮🇪 Ирландия"
+  city: Dublin
+  location_regex: '\b(ireland|dublin|cork|galway|limerick|waterford|kilkenny|sligo|athlone)'
+  local_languages: []
+  salary_floor_month: 3400        # Critical Skills Employment Permit
+  visa_scheme: "Critical Skills Employment Permit"
+  geo: [53.4129, -8.2439]
+
+at:
+  name: Austria
+  label: "🇦🇹 Австрия"
+  city: Vienna
+  location_regex: '\b(austria|österreich|oesterreich|vienna|wien|graz|linz|salzburg|innsbruck|klagenfurt|villach|wels|st\. pölten|sankt pölten)'
+  local_languages: [german]
+  salary_floor_month: 4000
+  visa_scheme: "EU Blue Card / Red-White-Red Card"
+  geo: [47.5162, 14.5501]
+
+pl:
+  name: Poland
+  label: "🇵🇱 Польша"
+  city: Warsaw
+  location_regex: '\b(poland|polska|warsaw|warszawa|krak[oó]w|cracow|wroc[lł]aw|gda[nń]sk|pozna[nń]|[lł][oó]d[zź]|katowice|gdynia|szczecin|lublin|bia[lł]ystok|rzesz[oó]w|toru[nń]|bydgoszcz)'
+  local_languages: [polish]
+  salary_floor_month: 2700
+  visa_scheme: "EU Blue Card / work permit"
+  geo: [51.9194, 19.1451]
+
+cz:
+  name: Czechia
+  label: "🇨🇿 Чехия"
+  city: Prague
+  location_regex: '\b(czechia|czech republic|česko|cesko|prague|praha|brno|ostrava|plzeň|plzen|olomouc|liberec)'
+  local_languages: [czech]
+  salary_floor_month: 1900
+  visa_scheme: "EU Blue Card / Employee Card"
+  geo: [49.8175, 15.473]
+
+se:
+  name: Sweden
+  label: "🇸🇪 Швеция"
+  city: Stockholm
+  location_regex: '\b(sweden|sverige|stockholm|gothenburg|göteborg|goteborg|malm[oö]|uppsala|link[oö]ping|lund|v[aä]ster[aå]s|[oö]rebro|helsingborg|ume[aå])'
+  local_languages: [swedish]
+  salary_floor_month: 2500        # work permit: 80% медианной зарплаты
+  visa_scheme: "Work permit / EU Blue Card"
+  geo: [60.1282, 18.6435]
+
+dk:
+  name: Denmark
+  label: "🇩🇰 Дания"
+  city: Copenhagen
+  location_regex: '\b(denmark|danmark|copenhagen|k[oø]benhavn|aarhus|odense|aalborg|esbjerg|lyngby|kongens lyngby|billund)'
+  local_languages: [danish]
+  salary_floor_month: 5500        # Pay Limit Scheme
+  visa_scheme: "Pay Limit Scheme / EU Blue Card"
+  geo: [56.2639, 9.5018]
+
+fi:
+  name: Finland
+  label: "🇫🇮 Финляндия"
+  city: Helsinki
+  location_regex: '\b(finland|suomi|helsinki|espoo|tampere|vantaa|oulu|turku|jyväskylä|jyvaskyla|lahti|kuopio)'
+  local_languages: [finnish]
+  salary_floor_month: 3600        # Specialist permit
+  visa_scheme: "Specialist permit / EU Blue Card"
+  geo: [61.9241, 25.7482]
+
+it:
+  name: Italy
+  label: "🇮🇹 Италия"
+  city: Milan
+  location_regex: '\b(italy|italia|milan|milano|rome|roma|turin|torino|bologna|florence|firenze|naples|napoli|genoa|genova|padua|padova|verona|trieste|bari|pisa)'
+  local_languages: [italian]
+  salary_floor_month: 2300
+  visa_scheme: "EU Blue Card"
+  geo: [41.8719, 12.5674]
+
+lu:
+  name: Luxembourg
+  label: "🇱🇺 Люксембург"
+  city: Luxembourg
+  location_regex: '\b(luxembourg|luxemburg|esch-sur-alzette|kirchberg|belval)'
+  local_languages: [french, german]
+  salary_floor_month: 4200
+  visa_scheme: "EU Blue Card"
+  geo: [49.8153, 6.1296]

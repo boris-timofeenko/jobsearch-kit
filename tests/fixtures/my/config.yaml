@@ -1,0 +1,2 @@
+# Конфиг для тестов: доски только из общего списка
+company_files: [boards/curated.yaml]

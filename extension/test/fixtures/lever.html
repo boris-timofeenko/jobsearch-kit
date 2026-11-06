@@ -1,0 +1,57 @@
+<!doctype html>
+<!-- Lever-like: labels without for=, questions as li cards, radios with option text only, location suggestions. -->
+<html><body>
+<form onsubmit="window.submitted = true; return false">
+<ul>
+  <li class="application-question"><label><div class="application-label">Resume/CV ✱</div>
+    <div class="application-field"><input type="file" name="resume" id="resume-upload-input"></div></label></li>
+  <li class="application-question"><label><div class="application-label">Full name ✱</div>
+    <div class="application-field"><input type="text" name="name"></div></label></li>
+  <li class="application-question"><label><div class="application-label">Email ✱</div>
+    <div class="application-field"><input type="email" name="email"></div></label></li>
+  <li class="application-question"><label><div class="application-label">Phone</div>
+    <div class="application-field"><input type="text" name="phone"></div></label></li>
+  <li class="application-question"><label><div class="application-label">Current location</div>
+    <div class="application-field"><input type="text" name="location" id="location-input"><div class="dropdown-results" id="locres"></div></div></label></li>
+  <li class="application-question"><label><div class="application-label">Current company</div>
+    <div class="application-field"><input type="text" name="org"></div></label></li>
+  <li class="application-question"><label><div class="application-label">LinkedIn URL</div>
+    <div class="application-field"><input type="text" name="urls[LinkedIn]"></div></label></li>
+  <li class="application-question"><label><div class="application-label">Other website</div>
+    <div class="application-field"><input type="text" name="urls[Other]"></div></label></li>
+  <li class="application-question custom-question"><div><div class="application-label">Where do you currently live? ✱</div>
+    <div class="application-field"><div class="application-dropdown"><select name="cards[a][field0]">
+      <option value="">Select...</option><option>Portugal</option><option>Serbia</option><option>Spain</option></select></div></div></div></li>
+  <li class="application-question custom-question"><div><div class="application-label">Do you require Visa sponsorship to work in your location? ✱</div>
+    <div class="application-field"><ul>
+      <li><label><input type="radio" name="cards[b][field0]" value="No"> No</label></li>
+      <li><label><input type="radio" name="cards[b][field0]" value="Yes, sponsorship is required"> Yes, sponsorship is required</label></li>
+    </ul></div></div></li>
+  <li class="application-question custom-question"><div><div class="application-label">How did you hear about us?</div>
+    <div class="application-field"><ul>
+      <li><label><input type="radio" name="cards[c][field0]" value="1"> Company career page</label></li>
+      <li><label><input type="radio" name="cards[c][field0]" value="2"> LinkedIn job posting</label></li>
+    </ul></div></div></li>
+  <li class="application-question custom-question"><div><div class="application-label">Do you have experience with Appium?</div>
+    <div class="application-field"><ul>
+      <li><label><input type="radio" name="cards[d][field0]" value="y"> Yes</label></li>
+      <li><label><input type="radio" name="cards[d][field0]" value="n"> No</label></li>
+    </ul></div></div></li>
+  <li class="application-question custom-question"><div><div class="application-label">Do you have experience with Kotlin?</div>
+    <div class="application-field"><ul>
+      <li><label><input type="radio" name="cards[e][field0]" value="y"> Yes</label></li>
+      <li><label><input type="radio" name="cards[e][field0]" value="n"> No</label></li>
+    </ul></div></div></li>
+</ul>
+<button type="submit">Submit application</button>
+</form>
+<script>
+  // suggestions appear 300 ms after typing, as with Lever's location lookup
+  const inp = document.getElementById('location-input');
+  inp.addEventListener('input', () => setTimeout(() => {
+    const box = document.getElementById('locres');
+    box.innerHTML = inp.value ? '<div class="dropdown-location">Belgrade, Central Serbia, Serbia</div><div class="dropdown-location">Belgrade, Montana, United States</div>' : '';
+    box.querySelectorAll('.dropdown-location').forEach((d) => d.addEventListener('click', () => { inp.value = d.textContent; box.innerHTML = ''; window.pickedLocation = d.textContent; }));
+  }, 300));
+</script>
+</body></html>

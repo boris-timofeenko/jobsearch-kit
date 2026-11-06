@@ -1,0 +1,271 @@
+# Крупные работодатели Германии для `discover --file discovery/de_large.txt --area de`:
+# DAX / MDAX / SDAX / TecDAX, крупные частные компании, IT-дочки концернов и крупные tech-компании.
+Adidas
+Airbus
+Allianz
+Allianz Technology
+BASF
+Bayer
+Beiersdorf
+BMW Group
+BMW Car IT
+Brenntag
+Commerzbank
+Continental
+Daimler Truck
+Deutsche Bank
+Deutsche Boerse
+DHL Group
+Deutsche Post
+Deutsche Telekom
+T-Systems
+Telekom MMS
+E.ON
+Fresenius
+Fresenius Medical Care
+GEA
+Hannover Re
+Heidelberg Materials
+Henkel
+Infineon
+Mercedes-Benz
+Mercedes-Benz Tech Innovation
+Merck
+MTU Aero Engines
+Munich Re
+Ergo
+Porsche
+Porsche Digital
+MHP
+Qiagen
+Rheinmetall
+RWE
+SAP
+SAP Signavio
+Sartorius
+Siemens
+Siemens Energy
+Siemens Healthineers
+Siemens Mobility
+Symrise
+Volkswagen
+Cariad
+MOIA
+Vonovia
+Zalando
+Scout24
+Delivery Hero
+HelloFresh
+TeamViewer
+Nemetschek
+Bechtle
+Cancom
+Carl Zeiss
+Zeiss
+Carl Zeiss Meditec
+Siltronic
+Jenoptik
+Software AG
+United Internet
+1&1
+IONOS
+Atoss Software
+adesso
+GFT Technologies
+Nagarro
+CompuGroup Medical
+Hensoldt
+Sixt
+Lufthansa
+Lufthansa Systems
+Lufthansa Technik
+Lufthansa Industry Solutions
+TUI
+Puma
+Hugo Boss
+Fielmann
+Stroeer
+ProSiebenSat.1
+Joyn
+RTL Deutschland
+Evotec
+freenet
+Telefonica Deutschland
+Hypoport
+Europace
+flatexDEGIRO
+Auto1
+Auto1 Group
+Check24
+trivago
+Mister Spex
+Westwing
+Jungheinrich
+Kion
+Knorr-Bremse
+Krones
+Aixtron
+Hella
+Forvia Hella
+Schaeffler
+ZF Friedrichshafen
+ZF Group
+Bosch
+Robert Bosch
+Bosch Digital
+Vitesco Technologies
+Schwarz IT
+Schwarz Digits
+Lidl
+Kaufland
+Aldi Sued
+REWE Digital
+REWE Group
+Otto
+Otto Group
+Ottogroup
+ABOUT YOU
+Metro
+Metro Digital
+MediaMarktSaturn
+Ceconomy
+DATEV
+Talanx
+HDI
+DZ Bank
+Deutsche Bahn
+DB Systel
+Bertelsmann
+Arvato
+Arvato Systems
+Springer Nature
+Hapag-Lloyd
+Amadeus
+DKV Mobility
+Mobimeo
+Elektrobit
+Vector Informatik
+Draeger
+B. Braun
+Trumpf
+Festo
+Kaercher
+Wuerth
+Wuerth Phoenix
+Stihl
+Miele
+Dm-drogerie markt
+dmTECH
+Edeka
+Tchibo
+Breuninger
+Bonprix
+Douglas
+Rossmann
+Hornbach
+Celonis
+Personio
+N26
+Trade Republic
+Solaris
+Solarisbank
+GetYourGuide
+Flix
+FlixBus
+Raisin
+Contentful
+SumUp
+Wefox
+Babbel
+Blinkist
+Tier Mobility
+Flink
+SoundCloud
+idealo
+mobile.de
+Kleinanzeigen
+HERE Technologies
+DeepL
+Aleph Alpha
+Helsing
+Quantum Systems
+Isar Aerospace
+Staffbase
+Pliant
+Billie
+Taxfix
+Moss
+Forto
+sennder
+Omio
+HomeToGo
+Enpal
+1Komma5
+Unzer
+Mambu
+Clark
+ottonova
+Freeletics
+Konux
+Wandelbots
+Ada Health
+Doctolib
+Volocopter
+Lilium
+Siemens Digital Industries Software
+Sennheiser
+Uniper
+EnBW
+Vattenfall
+Deutsche Kreditbank
+ING Deutschland
+comdirect
+Union Investment
+Allianz Global Investors
+Deka
+LBBW
+Helaba
+Commerzbank Digital
+Zalando SE
+Wolt
+Gorillas
+Mytheresa
+Home24
+Jimdo
+XING
+New Work SE
+Ionos
+StepStone
+Immowelt
+AVIV Group
+Ebay
+Spryker
+Shopware
+Plentymarkets
+Sevdesk
+Lexoffice
+Haufe Group
+Wolters Kluwer
+Exasol
+Signavio
+Camunda
+Mondu
+Grover
+Finanzguru
+Smava
+Check24 Vergleichsportal
+Verivox
+Payback
+Wirecard
+Klarna
+PAYONE
+Computop
+Concardis
+Nexi Germany
+Fiducia & GAD
+Atruvia
+Finanz Informatik
+Sparkasse
+Deutsche Boerse Group
+Clearstream
+Eurex

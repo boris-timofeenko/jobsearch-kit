@@ -1,0 +1,69 @@
+# Профиль: кто ищет, какую роль и где. Лежит в my/profile.yaml (не в git). Справочник полей — docs/CONFIG.md.
+# После правок: `python -m jobsearch check`, а если база уже есть — `python -m jobsearch reanalyze`.
+
+candidate:
+  name: Anna Example                       # для имени файла CV
+  # Свободный текст для модели: роль, годы опыта, стек, домены, чем гордишься. Только то, что есть в резюме:
+  # модель сравнивает вакансию с этим текстом. Полезно прямо написать, чего НЕТ (языков, фреймворков).
+  summary: |
+    Backend-разработчик, 6 лет: Python (FastAPI, Django), PostgreSQL, Redis, Kafka, Docker, Kubernetes, AWS.
+    Последние 3 года — платёжный сервис в финтехе (~2 млн пользователей), веду двух разработчиков.
+    Go и Java в резюме нет.
+  languages: [English, Russian]            # рабочие языки; вакансии с обязательным другим языком отсекаются
+  seniority: senior                        # junior | mid | senior | lead — junior-вакансии отсекаются от senior и выше
+  birth_year: 1995                         # необязательно: для порогов «до 30 лет» (Нидерланды)
+  needs_visa: true                         # false — гражданство ЕС/ЕЭЗ: «EU citizens only» и спонсорство не мешают
+  based_in: Georgia                        # где живёшь сейчас: remote «только для жителей X» не отсекается, если X — тут
+  citizenship_note: "Гражданство Казахстана, живёт в Грузии"   # одной фразой для модели
+
+# ROLE: сюда вставляется пресет роли
+
+target:
+  # Основная страна: код из presets/countries.yaml (nl, de, be, fr, es, pt, ie, at, pl, cz, se, dk, fi, it, lu).
+  # Порог зарплаты, визовая схема, города и языки берутся оттуда; любое поле можно переопределить:
+  #   country: {code: de, salary_floor_month: 4225}
+  # Только remote без переезда: country: none.
+  country: nl
+  countries: [de]                          # дополнительные страны переезда, у каждой свой трек
+  remote: true                             # искать ещё remote в Европе
+  salary_target_month: 6000                # желаемый гросс в месяц, €: выше — плюс к score
+  remote_base: "Грузия"                    # откуда работать remote — для модели
+  # Цель одним абзацем для модели: что важнее, чем можно поступиться. На fit не влияет, только на заметки.
+  goal_note: >
+    Главная цель — переезд по рабочей визе. Продуктовые компании лучше аутсорса, найм в штат лучше контракта.
+    Remote без визы — запасной вариант «доход».
+  # Поправки к fit после оценки модели. Положительные — только когда модель дала fit ≥ 5. Все ключи — docs/CONFIG.md.
+  fit_adjustments:
+    sponsorship_yes: 2          # виза обещана явно
+    relocation_yes: 1           # помощь с переездом без слова «виза»
+    ai_first: 0                 # работа строится вокруг AI-агентов (поставь 1–3, если тебе это важно)
+    ai_product: 0               # роль делает или тестирует AI/LLM-функции продукта
+    ai_tooling: 0               # от роли ждут AI-инструментов в работе
+    agency: -1                  # рекрутер/посредник
+    consultancy: -1             # аутсорс/аутстафф
+    contractor: -2              # B2B/фриланс/contract (0, если виза обещана явно)
+  # location_penalty: {nl: -1, de: 1, eu: 2, remote_nl: 2, remote: 3, other: 3}   # по умолчанию считается сам
+
+# Компании, где ты уже в процессе: в отчёте пометка «уже в воронке», applied/rejected опускаются вниз.
+known_companies:
+  applied: []
+  rejected: []
+  paused: []
+  planned: []
+
+# Не показывать вообще (оборонка, госсектор, перепостеры). Описания для них даже не грузятся.
+exclude_companies: [Thales, Ministerie van Defensie, Defensie, Rijksoverheid, Jobster, Free-Work, mamgo, OverheidZZP]
+
+# Имя компании на доске → юрлицо в реестре спонсоров IND (только Нидерланды), когда автосовпадение не срабатывает
+sponsor_aliases:
+  Funda: Funda Real Estate B.V.
+  Harver: Harver Ops B.V.
+  Nationale-Nederlanden: NN Personeel B.V.
+  NN Group: NN Personeel B.V.
+  BUX: BUX Technology B.V.
+
+# Кадровые агентства: пометка «агентство/рекрутер», минус к score
+agency_companies: [Spilberg, Independent Recruiters, Robert Walters, Huxley, Hays, Michael Page, Page Personnel, Randstad, Yacht, Brunel,
+  Computer Futures, Progressive Recruitment, Darwin Recruitment, Amoria Bond, Nigel Frank, Levy, YER, SThree, Experis, Manpower,
+  Adecco, Tempo-Team, Harvey Nash, Talent&Pro, Ordina Recruitment, Oliver James, Trinamics, Hunter Select, Undutchables, Adams Multilingual,
+  Lemon.io, Toptal, Turing, Crossover, EPAM Anywhere, Proxify, Remotely]

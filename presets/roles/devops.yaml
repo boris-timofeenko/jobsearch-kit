@@ -1,0 +1,48 @@
+role:
+  # Пресет: DevOps / SRE / Platform.
+  name: "DevOps / SRE / Platform Engineer"
+  definition: "инфраструктура и эксплуатация ПО: CI/CD, Kubernetes, облака, Infrastructure as Code, наблюдаемость, надёжность (SRE), внутренняя платформа для разработчиков"
+  not_this_role: >
+    системное администрирование офиса и helpdesk, сетевое железо и телеком, чистая разработка приложений,
+    QA, data engineering, security-аудит без инженерной части, SAP Basis, техподдержка
+  strengths: ""
+  small_gap: "другое облако (GCP вместо AWS), другой инструмент IaC или CI того же типа, другой домен"
+
+  queries: [DevOps Engineer, Site Reliability Engineer, Platform Engineer, Cloud Engineer, Senior DevOps Engineer,
+            Infrastructure Engineer, SRE, Kubernetes Engineer]
+  keywords: [devops, sre, platform engineer, cloud engineer, kubernetes]
+  categories:
+    remotive: devops
+    jobicy: devops
+    weworkremotely: [remote-devops-sysadmin-jobs]
+    themuse: Software Engineering
+    arbeitsagentur: [DevOps Engineer, Cloud Engineer]
+
+  title_include:
+    - '\b(devops|dev ops|sre|site reliability|platform|cloud|infrastructure|kubernetes|k8s|devsecops)\b[^,|]{0,20}\b(engineer|developer|architect|specialist)\b'
+    - '\b(devops|sre|site reliability engineer)\b'
+  title_exclude:
+    - '\b(qa|tester|test automation|sdet|frontend|front[- ]end|ios|android|data (engineer|scientist|analyst)|machine learning)\b'
+    - '\b(helpdesk|help desk|service desk|desktop support|it support|network technician|telecom|sap basis|citrix)\b'
+    - '\b(sales|customer|solutions? (engineer|architect)|presales|recruiter|designer|marketing|product manager|account)\b'
+    - '\b(do not apply|test job|testjob)\b'
+  title_boost:
+    '\b(devops|sre|site reliability|platform)\b': 8
+
+  stack:
+    kubernetes: 3
+    terraform: 3
+    'aws|gcp|azure': 2
+    'helm|argo ?cd|flux': 2
+    'prometheus|grafana|datadog|opentelemetry': 2
+    'github actions|gitlab ci|jenkins|ci/cd': 1
+    'ansible|pulumi': 1
+    'python|go|golang|bash': 1
+    'relocation|visa sponsorship|highly skilled migrant|kennismigrant|blue card': 6
+  focus: []
+  penalties:
+    - name: "похоже на поддержку пользователей, а не DevOps"
+      regex: '\b(helpdesk|service desk|end[- ]user support|1st line|first line|2nd line)\b'
+      unless: '\b(kubernetes|terraform|ci/cd)\b'
+      score: 15
+  off_domain: {}

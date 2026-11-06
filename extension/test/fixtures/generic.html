@@ -1,0 +1,66 @@
+<!doctype html>
+<!-- Classic server-rendered form (old Greenhouse / Teamtailor / Recruitee style): labels with for=, native selects. -->
+<html><body>
+<h1>Senior QA Engineer</h1>
+<h2>Experience you will need</h2>
+<p>Five years of experience with Playwright.</p>
+<form id="f" onsubmit="window.submitted = true; return false">
+  <h2>Apply for this job</h2>
+  <label for="fn">First Name *</label><input id="fn" name="job_application[first_name]">
+  <label for="ln">Last Name *</label><input id="ln" name="job_application[last_name]">
+  <label for="em">Email *</label><input id="em" type="email" name="job_application[email]">
+  <label for="ph">Phone</label><input id="ph" type="tel" name="job_application[phone]">
+  <label for="loc">Location (City)</label><input id="loc" name="job_application[location]">
+  <label for="li">LinkedIn Profile</label><input id="li" name="question_1">
+  <label for="web">Website</label><input id="web" name="question_2">
+  <label for="gh">GitHub</label><input id="gh" name="question_3">
+  <label for="cv">Resume/CV</label><input id="cv" type="file" accept=".pdf,.doc,.docx">
+  <label for="cl">Cover Letter</label><input id="cl" type="file">
+  <label for="already">Preferred name</label><input id="already" value="Sasha">
+
+  <label for="ctry">Country</label>
+  <select id="ctry"><option value="">Please select</option><option value="rs2">Serbia and Montenegro (former)</option><option value="rs">Serbia</option><option value="nl">Netherlands</option></select>
+
+  <label for="heard">How did you hear about this job?</label>
+  <select id="heard"><option value="">Select...</option><option>Company website</option><option value="li">LinkedIn</option><option>Referral</option></select>
+
+  <fieldset><legend>Will you now or in the future require visa sponsorship?</legend>
+    <label><input type="radio" name="sp" value="1"> Yes</label>
+    <label><input type="radio" name="sp" value="0"> No</label>
+  </fieldset>
+  <fieldset><legend>Are you legally authorized to work in the Netherlands?</legend>
+    <label><input type="radio" name="auth" value="1"> Yes</label>
+    <label><input type="radio" name="auth" value="0"> No</label>
+  </fieldset>
+  <fieldset><legend>Are you willing to relocate to Amsterdam?</legend>
+    <label><input type="radio" name="rel" value="y"> Yes</label>
+    <label><input type="radio" name="rel" value="n"> No</label>
+  </fieldset>
+  <fieldset><legend>Do you have at least 3 years of experience in test automation?</legend>
+    <label><input type="radio" name="y3" value="y"> Yes</label>
+    <label><input type="radio" name="y3" value="n"> No</label>
+  </fieldset>
+
+  <label for="gender">Gender</label>
+  <select id="gender"><option value="">Select...</option><option>Male</option><option>Female</option><option value="dec">I don't wish to answer</option></select>
+  <label for="vet">Veteran status</label>
+  <select id="vet"><option value="">Select...</option><option>I am a veteran</option><option value="dec">I prefer not to say</option></select>
+
+  <label for="sal">What are your salary expectations?</label><input id="sal">
+  <label for="salnum">Expected annual salary (EUR)</label><input id="salnum" type="number">
+  <label for="notice">What is your notice period?</label><input id="notice">
+  <label for="yrs">How many years of professional experience do you have?</label><input id="yrs" type="number">
+  <label for="yrsqa">Years of experience in QA</label><input id="yrsqa" type="number">
+  <label for="yrspw">How many years of experience do you have with Playwright?</label><input id="yrspw" type="number">
+  <label for="yrscy">How many years of experience do you have with Cypress?</label><input id="yrscy" type="number">
+  <label for="eng">English proficiency</label>
+  <select id="eng"><option value="">Select...</option><option>Basic</option><option>Conversational</option><option value="c1">Fluent</option><option>Native</option></select>
+  <label for="curco">Current company</label><input id="curco">
+  <label for="curti">Current job title</label><input id="curti">
+  <label for="refname">Referrer name</label><input id="refname">
+  <label for="addinfo">Additional information</label><textarea id="addinfo"></textarea>
+  <label for="summary">Professional summary</label><textarea id="summary"></textarea>
+  <label><input type="checkbox" id="gdpr"> I consent to the processing of my data according to the privacy policy</label>
+  <button type="submit">Submit application</button>
+</form>
+</body></html>

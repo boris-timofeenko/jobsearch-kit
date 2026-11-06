@@ -1,0 +1,24 @@
+# всё личное: профиль, свои доски, резюме, секреты, база
+/my/
+.env
+/data/
+# окружение
+.venv/
+__pycache__/
+.pytest_cache/
+.DS_Store
+# побочные файлы LaTeX при сборке CV руками
+*.aux
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+/*.log
+*.pdf
+# расширение автозаполнения: профиль и CV личные, собираются `jobsearch autofill`
+extension/profile.json
+extension/cv.pdf
+extension/web-ext-artifacts/
+extension/node_modules/
+extension/.amo-upload-uuid
+/dist/

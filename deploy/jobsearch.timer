@@ -1,0 +1,10 @@
+[Unit]
+Description=jobsearch fast run: 08,10,...,22:15 (quiet 00:15-08:00, the deep run takes 00:15)
+
+[Timer]
+OnCalendar=*-*-* 08,10,12,14,16,18,20,22:15:00 Europe/Amsterdam
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,440 @@
+# Спонсоры IND с доской на поддерживаемой ATS, где есть вакансии в Нидерландах (собрано 06.11.2026).
+# Получено так: `discover --from-ind --all --limit 0 --area nl` — все 13 085 имён реестра, слаги «словаслитно» и
+# «слова-через-дефис» на 8 ATS (200 тыс. запросов, ~2 ч), из 795 досок с вакансиями оставлены 441 с вакансией в NL.
+# Убраны: доски, которые уже есть в curated.yaml / de-large.yaml под другим слагом (иначе дубли с другим
+# именем компании), тестовая доска «Recruitee ATS» (Your-Career), внутренняя доска ACT, чужой бренд у Fasten.
+# Название на доске сверено с именем в реестре, где ATS его отдаёт: расходятся только переименования (пометка «на доске»).
+# Имя — из реестра без «B.V.»/«Netherlands»: по нему ищется спонсор. N/M — вакансий в NL / всего на момент сбора.
+
+- {name: "247TailorSteel", ats: smartrecruiters, slug: 247tailorsteel}   # 2/2
+- {name: "Abacus Medicine", ats: teamtailor, slug: abacusmedicine}   # 3/19
+- {name: "AbbVie", ats: smartrecruiters, slug: abbvie}   # 1/500
+- {name: "Accenture", ats: recruitee, slug: accenture}   # 2/2
+- {name: "ACOMO", ats: recruitee, slug: acomo}   # 3/4
+- {name: "AEGIR-Marine Employment Services", ats: recruitee, slug: aegirmarine}   # 3/10
+- {name: "AFS Energy", ats: recruitee, slug: afsenergy}   # 1/1
+- {name: "AIMMS", ats: recruitee, slug: aimms}   # 1/1
+- {name: "Airspace", ats: greenhouse, slug: airspace}   # 1/18
+- {name: "AKQA", ats: greenhouse, slug: akqa}   # 4/29
+- {name: "Alewijnse", ats: recruitee, slug: alewijnse}   # 25/40
+- {name: "Allchiefs", ats: recruitee, slug: allchiefs}   # 1/1
+- {name: "Allego", ats: recruitee, slug: allego}   # 2/6
+- {name: "AllYourBI", ats: recruitee, slug: allyourbi}   # 2/4
+- {name: "Alpine", ats: recruitee, slug: alpine}   # 7/10
+- {name: "Altrex", ats: recruitee, slug: altrex}   # 4/4
+- {name: "Altura", ats: ashby, slug: altura}   # 4/4
+- {name: "Ampelmann Operations", ats: recruitee, slug: ampelmannoperations}   # 2/2
+- {name: "Anthony Veder Rederijzaken", ats: recruitee, slug: anthonyveder}   # 7/9
+- {name: "APM Terminals Maasvlakte II", ats: smartrecruiters, slug: apmterminals}   # 1/1
+- {name: "Apolix", ats: personio, slug: apolix}   # 3/3
+- {name: "Arcwide", ats: teamtailor, slug: arcwide}   # 1/23
+- {name: "Aryza", ats: personio, slug: aryza}   # 1/4
+- {name: "Ascom (Nederland)", ats: teamtailor, slug: ascom}   # 7/40
+- {name: "ASM", ats: greenhouse, slug: asm}   # 13/506
+- {name: "Assai Software Services", ats: recruitee, slug: assaisoftware}   # 1/1
+- {name: "Athora", ats: recruitee, slug: athora}   # 31/31
+- {name: "AtriCure", ats: greenhouse, slug: atricure}   # 2/55
+- {name: "AutoScout24", ats: greenhouse, slug: autoscout24}   # 2/36
+- {name: "Avant Arte", ats: recruitee, slug: avantarte}   # 3/11
+- {name: "Aveco De Bondt", ats: recruitee, slug: avecodebondt}   # 73/73
+- {name: "Avery Dennison Hong Kong", ats: smartrecruiters, slug: averydennison}   # 22/478
+- {name: "Aviko", ats: smartrecruiters, slug: aviko}   # 28/53
+- {name: "AWIN", ats: greenhouse, slug: awin}   # 2/33
+- {name: "AxiCom", ats: greenhouse, slug: axicom}   # 2/11
+- {name: "Baeken", ats: recruitee, slug: baeken}   # 2/2
+- {name: "Baker Tilly (Netherlands)", ats: recruitee, slug: bakertilly}   # 146/146
+- {name: "Ballast Nedam Bouw & Ontwikkeling", ats: recruitee, slug: ballastnedam}   # 139/143
+- {name: "Bdairy", ats: recruitee, slug: bdairy}   # 2/2
+- {name: "Benchmark Electronics", ats: recruitee, slug: benchmarkelectronics}   # 24/24
+- {name: "Bergman Clinics", ats: recruitee, slug: bergmanclinics}   # 90/90
+- {name: "Betty Blocks", ats: recruitee, slug: bettyblocks}   # 1/1
+- {name: "Bidfood", ats: recruitee, slug: bidfood}   # 70/70
+- {name: "Black Semiconductor", ats: ashby, slug: blacksemiconductor}   # 2/46
+- {name: "BloomReach", ats: greenhouse, slug: bloomreach}   # 2/68
+- {name: "Blue 10", ats: recruitee, slug: blue10}   # 12/12
+- {name: "Blue Heart Energy", ats: recruitee, slug: blueheart}   # 11/11
+- {name: "Blue Wireless (Europe)", ats: greenhouse, slug: bluewireless}   # 2/4
+- {name: "Blueprint Automation", ats: recruitee, slug: blueprintautomation}   # 4/4
+- {name: "Bosman Van Zaal", ats: recruitee, slug: bosmanvanzaal}   # 7/7
+- {name: "Bouwinvest Real Estate Investors", ats: recruitee, slug: bouwinvestrealestateinvestors}   # 2/2
+- {name: "BPM Company", ats: recruitee, slug: bpmcompany}   # 11/11
+- {name: "Brain Corporation", ats: greenhouse, slug: braincorporation}   # 1/10
+- {name: "Brainboss", ats: recruitee, slug: brainboss}   # 10/10
+- {name: "Brenger", ats: recruitee, slug: brenger}   # 2/2
+- {name: "BridgeFund", ats: recruitee, slug: bridgefund}   # 6/6
+- {name: "Brownline", ats: recruitee, slug: brownline}   # 9/9
+- {name: "Bureau Schmidt", ats: recruitee, slug: bureauschmidt}   # 9/9
+- {name: "Bynder", ats: ashby, slug: bynder}   # 13/22
+- {name: "C Teleport", ats: teamtailor, slug: cteleport}   # 2/6
+- {name: "Caely", ats: personio, slug: caely}   # 6/13
+- {name: "Cainiao (Netherlands)", ats: teamtailor, slug: cainiao}   # 4/41
+- {name: "CarbonX", ats: ashby, slug: carbonx}   # 1/1
+- {name: "Carerix", ats: smartrecruiters, slug: carerix}   # 1/2
+- {name: "Caseware", ats: lever, slug: caseware}   # 2/42
+- {name: "Centraal Bureau voor de Statistiek", ats: recruitee, slug: centraalbureauvoordestatistiek}   # 19/19
+- {name: "Centric", ats: recruitee, slug: centric}   # 54/55
+- {name: "Channext", ats: recruitee, slug: channext}   # 4/4
+- {name: "Cheers Interactive (Netherlands)", ats: smartrecruiters, slug: cheersinteractive}   # 3/3
+- {name: "Chiropractie Centraal", ats: recruitee, slug: chiropractiecentraal}   # 1/1
+- {name: "Clifford Chance LLP", ats: smartrecruiters, slug: cliffordchance}   # 24/186
+- {name: "CNS Media", ats: recruitee, slug: cnsmedia}   # 3/3
+- {name: "Codit", ats: teamtailor, slug: codit}   # 3/11
+- {name: "Companial", ats: lever, slug: companial}   # 5/14
+- {name: "Consilium Safety", ats: teamtailor, slug: consiliumsafety}   # 2/33
+- {name: "Contentoo", ats: ashby, slug: contentoo}   # 3/3
+- {name: "Control Union Certifications", ats: recruitee, slug: controlunion}   # 8/9
+- {name: "Convious", ats: recruitee, slug: convious}   # 1/1
+- {name: "Copernica", ats: recruitee, slug: copernica}   # 4/4
+- {name: "Corendon Hotels & Resorts", ats: recruitee, slug: corendonhotels}   # 46/47
+- {name: "Corsearch", ats: teamtailor, slug: corsearch}   # 2/9
+- {name: "Cosun", ats: recruitee, slug: cosun}   # 9/9
+- {name: "CowManager", ats: recruitee, slug: cowmanager}   # 7/9
+- {name: "Cradle Bio", ats: ashby, slug: cradlebio}   # 4/8
+- {name: "Creative Fabrica", ats: greenhouse, slug: creativefabrica}   # 11/11, на доске «idea.ai»
+- {name: "Crowe Foederer", ats: recruitee, slug: crowefoederer}   # 91/91
+- {name: "Cuccibu", ats: recruitee, slug: cuccibu}   # 3/3
+- {name: "Cusp AI", ats: ashby, slug: cuspai}   # 13/23
+- {name: "D/DOCK", ats: personio, slug: ddock}   # 1/1
+- {name: "Datamaran", ats: teamtailor, slug: datamaran}   # 9/9
+- {name: "Datenna", ats: recruitee, slug: datenna}   # 1/1
+- {name: "Dawn Aerospace", ats: greenhouse, slug: dawnaerospace}   # 8/25
+- {name: "Dealroom.co", ats: recruitee, slug: dealroomco}   # 2/2
+- {name: "Deeploy", ats: ashby, slug: deeploy}   # 2/2
+- {name: "DEG Groep", ats: smartrecruiters, slug: deggroep}   # 5/5
+- {name: "Delta Electronics (Netherlands)", ats: smartrecruiters, slug: deltaelectronics}   # 42/73
+- {name: "DeltaQuad", ats: teamtailor, slug: deltaquad}   # 22/22
+- {name: "Den Hartogh Shared Services", ats: recruitee, slug: denhartogh}   # 37/60
+- {name: "Design Bridge and Partners", ats: greenhouse, slug: designbridge}   # 4/27
+- {name: "DigiBoox", ats: recruitee, slug: digiboox}   # 3/3
+- {name: "Ditio", ats: recruitee, slug: ditio}   # 4/4
+- {name: "Dixstone", ats: teamtailor, slug: dixstone}   # 4/5
+- {name: "Dosign", ats: smartrecruiters, slug: dosign}   # 1/1
+- {name: "Drieam", ats: recruitee, slug: drieam}   # 3/3
+- {name: "DroneShield", ats: greenhouse, slug: droneshield}   # 5/29
+- {name: "DTS", ats: recruitee, slug: dts}   # 8/9
+- {name: "DTX", ats: recruitee, slug: dtx}   # 8/8
+- {name: "Dura Vermeer Infra Landelijke Projecten", ats: recruitee, slug: duravermeer}   # 353/379
+- {name: "Dustin", ats: teamtailor, slug: dustin}   # 28/61
+- {name: "Dyflexis", ats: recruitee, slug: dyflexis}   # 14/17
+- {name: "Dynamic People", ats: recruitee, slug: dynamicpeople}   # 17/17
+- {name: "E-Mergo", ats: recruitee, slug: emergo}   # 6/6
+- {name: "Easee", ats: teamtailor, slug: easee}   # 1/4
+- {name: "Ebusco", ats: recruitee, slug: ebusco}   # 1/2
+- {name: "EdgeConneX", ats: greenhouse, slug: edgeconnex}   # 1/16
+- {name: "Effectory", ats: recruitee, slug: effectory}   # 6/6
+- {name: "Eichholtz", ats: recruitee, slug: eichholtz}   # 2/5
+- {name: "Element Logic", ats: teamtailor, slug: elementlogic}   # 2/25
+- {name: "Enable U", ats: recruitee, slug: enableu}   # 1/1
+- {name: "Endeavour", ats: personio, slug: endeavour}   # 9/9
+- {name: "Eneve", ats: recruitee, slug: eneve}   # 1/1
+- {name: "ENPICOM", ats: recruitee, slug: enpicom}   # 1/1
+- {name: "Envipco", ats: recruitee, slug: envipco}   # 5/23
+- {name: "Equal 1 Laboratories (The Netherlands)", ats: ashby, slug: equal1}   # 3/11
+- {name: "Equalture", ats: smartrecruiters, slug: equalture}   # 1/1
+- {name: "EUROPEAN HEMATOLOGY ASSOCIATION", ats: recruitee, slug: europeanhematologyassociation}   # 1/1
+- {name: "Eventix", ats: recruitee, slug: eventix}   # 7/7
+- {name: "EversPartners", ats: recruitee, slug: everspartners}   # 2/2
+- {name: "Evolution", ats: smartrecruiters, slug: evolution}   # 6/288
+- {name: "Evondos", ats: teamtailor, slug: evondos}   # 5/5
+- {name: "Expeditors", ats: smartrecruiters, slug: expeditors}   # 1/500
+- {name: "Experiencegift", ats: smartrecruiters, slug: experiencegift}   # 1/1
+- {name: "Eye Security", ats: ashby, slug: eye-security}   # 23/32
+- {name: "FairPhone", ats: personio, slug: fairphone}   # 8/10
+- {name: "FareHarbor", ats: greenhouse, slug: fareharbor}   # 1/3
+- {name: "Fastned", ats: recruitee, slug: fastned}   # 12/39
+- {name: "FeedbackFruits", ats: ashby, slug: feedbackfruits}   # 6/6
+- {name: "Fidamy", ats: ashby, slug: fidamy}   # 7/7
+- {name: "Fixico", ats: recruitee, slug: fixico}   # 4/5
+- {name: "Flexhub", ats: teamtailor, slug: flexhub}   # 11/12
+- {name: "Flexport", ats: greenhouse, slug: flexport}   # 19/191
+- {name: "Floryn", ats: recruitee, slug: floryn}   # 1/3
+- {name: "Focus Orange Technology", ats: smartrecruiters, slug: focusorange}   # 1/1
+- {name: "Founda Health", ats: teamtailor, slug: foundahealth}   # 1/2
+- {name: "Freeday", ats: recruitee, slug: freeday}   # 4/4
+- {name: "Frisse Blikken ondernemen met talent", ats: recruitee, slug: frisseblikken}   # 6/6
+- {name: "FunXtion", ats: recruitee, slug: funxtion}   # 1/1
+- {name: "Futurewhiz", ats: recruitee, slug: futurewhiz}   # 3/4
+- {name: "GAC", ats: recruitee, slug: gac}   # 3/70
+- {name: "Gate terminal", ats: recruitee, slug: gateterminal}   # 6/6
+- {name: "GBM Works", ats: recruitee, slug: gbmworks}   # 1/1
+- {name: "GenomeScan", ats: recruitee, slug: genomescan}   # 2/2
+- {name: "GeriMedica", ats: recruitee, slug: gerimedica}   # 1/1
+- {name: "Get-E", ats: personio, slug: get-e}   # 7/10
+- {name: "GIGA Storage", ats: recruitee, slug: gigastorage}   # 1/5
+- {name: "GoldRepublic", ats: recruitee, slug: goldrepublic}   # 2/2
+- {name: "GoodHabitz", ats: teamtailor, slug: goodhabitz}   # 3/7
+- {name: "Goodman", ats: greenhouse, slug: goodman}   # 9/35
+- {name: "Green Giraffe Capital Partners", ats: recruitee, slug: greengiraffe}   # 1/4
+- {name: "Greenchoice", ats: recruitee, slug: greenchoice}   # 17/17
+- {name: "GumGum", ats: greenhouse, slug: gumgum}   # 1/11
+- {name: "GymPass", ats: greenhouse, slug: gympass}   # 4/85, на доске «Wellhub»
+- {name: "HatchTech", ats: recruitee, slug: hatchtech}   # 7/7
+- {name: "HBM Machines", ats: recruitee, slug: hbmmachines}   # 18/18
+- {name: "HeatTransformers", ats: recruitee, slug: heattransformers}   # 4/4
+- {name: "Hellebrekers", ats: recruitee, slug: hellebrekers}   # 30/30
+- {name: "HighRadius", ats: greenhouse, slug: highradius}   # 2/68
+- {name: "Hikrobot", ats: personio, slug: hikrobot}   # 4/18
+- {name: "Hikvision", ats: personio, slug: hikvision}   # 7/10
+- {name: "HousingAnywhere", ats: greenhouse, slug: housinganywhere}   # 3/3
+- {name: "Howden", ats: recruitee, slug: howden}   # 28/28
+- {name: "Howspace", ats: teamtailor, slug: howspace}   # 1/1
+- {name: "Hudl", ats: greenhouse, slug: hudl}   # 4/46
+- {name: "Hunter Douglas", ats: greenhouse, slug: hunterdouglas}   # 17/74
+- {name: "Hydryx", ats: teamtailor, slug: hydryx}   # 3/3
+- {name: "I-SEC International Security", ats: recruitee, slug: isec}   # 8/8
+- {name: "iChoosr", ats: recruitee, slug: ichoosr}   # 4/5
+- {name: "IlionX", ats: teamtailor, slug: ilionx}   # 9/13
+- {name: "Impetus", ats: teamtailor, slug: impetus}   # 3/13, на доске «Keyrus EPM»
+- {name: "Incentro", ats: teamtailor, slug: incentro}   # 10/13
+- {name: "Incision", ats: teamtailor, slug: incision}   # 4/5
+- {name: "Inkubis", ats: teamtailor, slug: inkubis}   # 3/3
+- {name: "Innova Market Insights", ats: recruitee, slug: innovamarketinsights}   # 7/11
+- {name: "Insify", ats: lever, slug: insify}   # 14/14
+- {name: "Intigris", ats: recruitee, slug: intigris}   # 2/2
+- {name: "Invest-NL", ats: recruitee, slug: investnl}   # 4/4
+- {name: "IQIP", ats: recruitee, slug: iqip}   # 8/8
+- {name: "ITQ Consultancy", ats: recruitee, slug: itqconsultancy}   # 9/23
+- {name: "iwell", ats: recruitee, slug: iwell}   # 9/15
+- {name: "Jan Zandbergen World-Wide Quality in Meat", ats: recruitee, slug: janzandbergen}   # 3/3
+- {name: "Joinson & Spice", ats: recruitee, slug: joinsonandspice}   # 2/2
+- {name: "Jump Trading", ats: greenhouse, slug: jumptrading}   # 7/93
+- {name: "KCAP", ats: recruitee, slug: kcap}   # 1/8
+- {name: "Kenz-Figee", ats: smartrecruiters, slug: kenz-figee}   # 2/2
+- {name: "KommaGo", ats: recruitee, slug: kommago}   # 2/2
+- {name: "Konecranes", ats: smartrecruiters, slug: konecranes}   # 11/394
+- {name: "Konica Minolta Business Solutions", ats: recruitee, slug: konicaminolta}   # 6/11
+- {name: "Koninklijke Gazelle", ats: recruitee, slug: koninklijkegazelle}   # 5/7
+- {name: "KPN", ats: smartrecruiters, slug: kpn}   # 50/50
+- {name: "Kubus", ats: recruitee, slug: kubus}   # 5/5
+- {name: "Leadinfo", ats: teamtailor, slug: leadinfo}   # 5/7
+- {name: "Learned", ats: recruitee, slug: learned}   # 11/11
+- {name: "Level.works", ats: greenhouse, slug: levelworks}   # 11/11
+- {name: "LINKIT", ats: recruitee, slug: linkit}   # 15/15
+- {name: "LOGEX", ats: recruitee, slug: logex}   # 3/5
+- {name: "Maastricht Aachen Airport", ats: recruitee, slug: maastrichtaachenairport}   # 3/3
+- {name: "Macaw", ats: personio, slug: macaw}   # 8/12
+- {name: "Manometric", ats: recruitee, slug: manometric}   # 9/12
+- {name: "Marktlink Capital Management Coöperatief U.A.", ats: personio, slug: marktlinkcapital}   # 14/25
+- {name: "MatchWornShirt", ats: recruitee, slug: matchwornshirt}   # 8/8
+- {name: "Maverick Derivatives", ats: greenhouse, slug: maverickderivatives}   # 1/2
+- {name: "Mead Johnson", ats: teamtailor, slug: meadjohnson}   # 16/16
+- {name: "Mediabrands", ats: greenhouse, slug: mediabrands}   # 9/214, на доске «Omnicom Media»
+- {name: "Mercell", ats: teamtailor, slug: mercell}   # 7/9
+- {name: "MI Company", ats: recruitee, slug: micompany}   # 8/13
+- {name: "Mijndomein", ats: recruitee, slug: mijndomein}   # 14/14
+- {name: "Milabs", ats: smartrecruiters, slug: milabs}   # 1/1
+- {name: "Milence", ats: recruitee, slug: milence}   # 2/2
+- {name: "Modulr Finance", ats: greenhouse, slug: modulrfinance}   # 3/23
+- {name: "MOL Logistics (Netherlands)", ats: teamtailor, slug: mollogistics}   # 3/3
+- {name: "Momo Medical", ats: recruitee, slug: momomedical}   # 14/21
+- {name: "Monday Merch", ats: recruitee, slug: mondaymerch}   # 19/21
+- {name: "Moore MKW Audit", ats: recruitee, slug: mooremkw}   # 132/132
+- {name: "Motel One", ats: smartrecruiters, slug: motelone}   # 2/103
+- {name: "MotherDuck", ats: ashby, slug: motherduck}   # 1/7
+- {name: "Motivaction", ats: personio, slug: motivaction}   # 2/2
+- {name: "MP Liften", ats: smartrecruiters, slug: mpliften}   # 1/1
+- {name: "MR MARVIS", ats: teamtailor, slug: mrmarvis}   # 28/41
+- {name: "MST Groep", ats: recruitee, slug: mstgroep}   # 6/6
+- {name: "Multi Tank Card", ats: recruitee, slug: multitankcard}   # 2/2
+- {name: "MVRDV", ats: recruitee, slug: mvrdv}   # 8/9
+- {name: "My Jewellery", ats: recruitee, slug: myjewellery}   # 66/83
+- {name: "Naktuinbouw", ats: recruitee, slug: naktuinbouw}   # 6/6
+- {name: "NAXCON", ats: recruitee, slug: naxcon}   # 1/2
+- {name: "Nebius", ats: greenhouse, slug: nebius}   # 107/384
+- {name: "Nedal Aluminium", ats: recruitee, slug: nedalaluminium}   # 3/3
+- {name: "Nedstar", ats: personio, slug: nedstar}   # 5/5
+- {name: "NEM Energy", ats: recruitee, slug: nemenergy}   # 3/7
+- {name: "New Day at Work", ats: recruitee, slug: newdayatwork}   # 10/10
+- {name: "Nexent Bank", ats: personio, slug: nexent-bank}   # 3/3
+- {name: "NICE", ats: greenhouse, slug: nice}   # 1/116
+- {name: "NICo-Lab", ats: personio, slug: nicolab}   # 2/3
+- {name: "Nielen Schuman", ats: greenhouse, slug: nielenschuman}   # 3/6
+- {name: "Nikon", ats: recruitee, slug: nikon}   # 4/7
+- {name: "NLC Ventures", ats: greenhouse, slug: nlcventures}   # 3/7, на доске «CAREERS AT NLC»
+- {name: "NMi Certin", ats: recruitee, slug: nmicertin}   # 8/8
+- {name: "Nomios", ats: recruitee, slug: nomios}   # 9/31
+- {name: "NORNORM", ats: teamtailor, slug: nornorm}   # 1/4
+- {name: "Northwave", ats: recruitee, slug: northwave}   # 11/17
+- {name: "NXFiltration", ats: recruitee, slug: nxfiltration}   # 5/5
+- {name: "O My Bag", ats: recruitee, slug: omybag}   # 1/1
+- {name: "O-I", ats: smartrecruiters, slug: o-i}   # 1/152
+- {name: "Oatly", ats: teamtailor, slug: oatly}   # 3/25
+- {name: "Oceans of Energy", ats: recruitee, slug: oceansofenergy}   # 4/4
+- {name: "Offshore Independents Personnel", ats: smartrecruiters, slug: offshoreindependents}   # 1/1
+- {name: "Olyx", ats: recruitee, slug: olyx}   # 6/6
+- {name: "OMMAX", ats: personio, slug: ommax}   # 1/58
+- {name: "ON2IT", ats: recruitee, slug: on2it}   # 10/11
+- {name: "OneTrust", ats: greenhouse, slug: onetrust}   # 1/79
+- {name: "Onventis", ats: personio, slug: onventis}   # 1/7
+- {name: "Optics11", ats: recruitee, slug: optics11}   # 28/28
+- {name: "Oral Care Center", ats: recruitee, slug: oralcare}   # 56/56
+- {name: "Orbisk", ats: greenhouse, slug: orbisk}   # 2/12
+- {name: "Ore Energy", ats: personio, slug: ore-energy}   # 2/2
+- {name: "ORTEC Finance", ats: teamtailor, slug: ortecfinance}   # 3/3
+- {name: "Pacmed", ats: recruitee, slug: pacmed}   # 1/1
+- {name: "Parakar", ats: personio, slug: parakar}   # 4/5
+- {name: "Parfumado", ats: recruitee, slug: parfumado}   # 8/8
+- {name: "ParkBee", ats: teamtailor, slug: parkbee}   # 4/4
+- {name: "PassiveLogic", ats: teamtailor, slug: passivelogic}   # 3/11
+- {name: "Perk", ats: ashby, slug: perk}   # 4/129
+- {name: "PhiX", ats: recruitee, slug: phix}   # 3/5
+- {name: "Picnic", ats: smartrecruiters, slug: picnic}   # 2/2
+- {name: "Pinterest", ats: greenhouse, slug: pinterest}   # 2/166
+- {name: "Plumerai", ats: ashby, slug: plumerai}   # 2/4
+- {name: "Podimo", ats: teamtailor, slug: podimo}   # 6/11
+- {name: "Poki", ats: ashby, slug: poki}   # 4/4
+- {name: "Polaroid", ats: ashby, slug: polaroid}   # 6/21
+- {name: "Polars", ats: recruitee, slug: polars}   # 3/3
+- {name: "Portbase", ats: recruitee, slug: portbase}   # 14/14
+- {name: "PQShield", ats: greenhouse, slug: pqshield}   # 3/6
+- {name: "Practical", ats: recruitee, slug: practical}   # 4/4
+- {name: "Priva", ats: recruitee, slug: priva}   # 18/22
+- {name: "ProctorExam", ats: smartrecruiters, slug: proctorexam}   # 2/2
+- {name: "Project44", ats: greenhouse, slug: project44}   # 3/25
+- {name: "Prosus", ats: ashby, slug: prosus}   # 12/12
+- {name: "Protolabs", ats: lever, slug: protolabs}   # 3/75
+- {name: "PSV", ats: recruitee, slug: psv}   # 16/16
+- {name: "Pure Storage", ats: greenhouse, slug: purestorage}   # 3/354, на доске «Everpure»
+- {name: "PUUR Mondzorg Emmen.", ats: teamtailor, slug: puurmondzorg}   # 17/17
+- {name: "Q Park", ats: recruitee, slug: qpark}   # 23/23
+- {name: "Qelp", ats: smartrecruiters, slug: qelp}   # 3/3
+- {name: "QphoX", ats: greenhouse, slug: qphox}   # 4/4
+- {name: "QPS", ats: recruitee, slug: qps}   # 4/4
+- {name: "QTS", ats: recruitee, slug: qts}   # 4/6
+- {name: "Qualinx", ats: recruitee, slug: qualinx}   # 6/6
+- {name: "QuandaGo", ats: recruitee, slug: quandago}   # 3/3
+- {name: "QuantWare", ats: ashby, slug: quantware}   # 33/33
+- {name: "Ravo", ats: recruitee, slug: ravo}   # 10/10
+- {name: "Reaktor", ats: ashby, slug: reaktor}   # 2/14
+- {name: "Realworks", ats: recruitee, slug: realworks}   # 7/7
+- {name: "Red Bull", ats: smartrecruiters, slug: redbull}   # 2/500
+- {name: "Reddit", ats: greenhouse, slug: reddit}   # 6/163
+- {name: "Regnology", ats: personio, slug: regnology}   # 1/1
+- {name: "Relive", ats: recruitee, slug: relive}   # 1/1
+- {name: "Rentman", ats: ashby, slug: rentman}   # 6/8
+- {name: "Road", ats: recruitee, slug: road}   # 8/8
+- {name: "ROCSYS", ats: recruitee, slug: rocsys}   # 4/6
+- {name: "Roland Berger Strategy Consultants", ats: smartrecruiters, slug: rolandberger}   # 22/204
+- {name: "ROMEO", ats: personio, slug: romeo}   # 1/1
+- {name: "Roseman Labs", ats: recruitee, slug: rosemanlabs}   # 1/1
+- {name: "Rotate", ats: recruitee, slug: rotate}   # 4/7
+- {name: "Royal Huisman Shipyard", ats: recruitee, slug: royalhuisman}   # 4/4
+- {name: "Royal Lactalis Leerdammer", ats: teamtailor, slug: royallactalisleerdammer}   # 20/20
+- {name: "RTL", ats: recruitee, slug: rtl}   # 4/4
+- {name: "S-RM", ats: greenhouse, slug: srm}   # 1/21
+- {name: "Salland Engineering", ats: recruitee, slug: sallandengineering}   # 6/6
+- {name: "Sam Media", ats: personio, slug: sammedia}   # 2/5
+- {name: "Samotics", ats: recruitee, slug: samotics}   # 3/3
+- {name: "Samsara", ats: greenhouse, slug: samsara}   # 2/306
+- {name: "Sana Commerce EMEA", ats: smartrecruiters, slug: sanacommerce}   # 5/10
+- {name: "Sanday", ats: recruitee, slug: sanday}   # 9/9
+- {name: "Scholt Energy Sourcing", ats: personio, slug: scholtenergy}   # 18/48
+- {name: "Securitas", ats: smartrecruiters, slug: securitas}   # 20/500
+- {name: "ServiceNow", ats: smartrecruiters, slug: servicenow}   # 8/500
+- {name: "SFI Markets", ats: greenhouse, slug: sfimarkets}   # 2/2
+- {name: "SGS", ats: smartrecruiters, slug: sgs}   # 28/500
+- {name: "SHINE", ats: teamtailor, slug: shine}   # 11/52
+- {name: "SHV Energy", ats: recruitee, slug: shvenergy}   # 1/1
+- {name: "Shypple", ats: recruitee, slug: shypple}   # 3/5
+- {name: "Silverflow", ats: personio, slug: silverflow}   # 2/2
+- {name: "Single Quantum", ats: personio, slug: singlequantum}   # 2/2
+- {name: "Sircle Collection", ats: recruitee, slug: sirclecollection}   # 5/37
+- {name: "Skydreams", ats: greenhouse, slug: skydreams}   # 2/2
+- {name: "SkyGeo", ats: recruitee, slug: skygeo}   # 3/6
+- {name: "SkyNRG", ats: ashby, slug: skynrg}   # 4/9
+- {name: "Skytree", ats: recruitee, slug: skytree}   # 6/6
+- {name: "Smit Lamnalco", ats: smartrecruiters, slug: smitlamnalco}   # 1/5
+- {name: "Snappet", ats: recruitee, slug: snappet}   # 1/1
+- {name: "Solvinity", ats: recruitee, slug: solvinity}   # 9/9
+- {name: "Source.ag", ats: recruitee, slug: sourceag}   # 4/6
+- {name: "SphereMall", ats: recruitee, slug: spheremall}   # 3/3
+- {name: "STAEDEAN", ats: teamtailor, slug: staedean}   # 2/2
+- {name: "Stichting Humanitas voor Dienstverlening aan Mensen met een Hulpvraag", ats: teamtailor, slug: stichtinghumanitas}   # 54/56
+- {name: "Strohm", ats: personio, slug: strohm}   # 7/7
+- {name: "Studytube", ats: recruitee, slug: studytube}   # 9/9
+- {name: "Suit Supply", ats: greenhouse, slug: suitsupply}   # 37/210
+- {name: "Surfly", ats: recruitee, slug: surfly}   # 1/1
+- {name: "Swap", ats: ashby, slug: swap}   # 1/11
+- {name: "SWAP Support", ats: recruitee, slug: swapsupport}   # 3/3
+- {name: "SWARCO", ats: smartrecruiters, slug: swarco}   # 54/171
+- {name: "Sweco", ats: recruitee, slug: sweco}   # 179/180
+- {name: "Sympower", ats: recruitee, slug: sympower}   # 2/2
+- {name: "SYSTEMIQ", ats: greenhouse, slug: systemiq}   # 3/13
+- {name: "Talk360", ats: recruitee, slug: talk360}   # 3/4
+- {name: "Tameson", ats: recruitee, slug: tameson}   # 1/3
+- {name: "TCC Global", ats: recruitee, slug: tccglobal}   # 1/2
+- {name: "team.blue nl", ats: teamtailor, slug: teamblue}   # 11/92
+- {name: "Tebi", ats: ashby, slug: tebi}   # 6/19
+- {name: "Teero", ats: ashby, slug: teero}   # 1/5
+- {name: "Teleperformance", ats: recruitee, slug: teleperformance}   # 2/18
+- {name: "The Fellas Ads", ats: recruitee, slug: thefellasads}   # 4/4
+- {name: "The July", ats: teamtailor, slug: thejuly}   # 21/22
+- {name: "The Offshore Partners", ats: smartrecruiters, slug: theoffshorepartners}   # 1/1
+- {name: "Therapieland", ats: teamtailor, slug: therapieland}   # 3/3
+- {name: "This is Development", ats: recruitee, slug: thisis}   # 2/2
+- {name: "Thisworkz", ats: recruitee, slug: thisworkz}   # 6/6
+- {name: "Thoughtworks", ats: greenhouse, slug: thoughtworks}   # 2/49
+- {name: "ThreatFabric", ats: personio, slug: threatfabric}   # 2/2
+- {name: "TicketSwap", ats: recruitee, slug: ticketswap}   # 7/7
+- {name: "Tiofarma", ats: smartrecruiters, slug: tiofarma}   # 5/5
+- {name: "Tjip", ats: teamtailor, slug: tjip}   # 4/4
+- {name: "TK Elevator", ats: recruitee, slug: tkelevator}   # 14/14
+- {name: "TK Home Solutions", ats: recruitee, slug: tkhomesolutions}   # 2/2
+- {name: "TKH Artificial Intelligence", ats: recruitee, slug: tkhartificialintelligence}   # 1/1
+- {name: "Tower Research Capital", ats: greenhouse, slug: towerresearchcapital}   # 1/91
+- {name: "TRANSFERZ", ats: recruitee, slug: transferz}   # 1/1
+- {name: "Travix", ats: greenhouse, slug: travix}   # 6/6
+- {name: "TrueFullstaq", ats: recruitee, slug: truefullstaq}   # 10/10
+- {name: "Trunkrs", ats: recruitee, slug: trunkrs}   # 5/6
+- {name: "Trustmoore", ats: teamtailor, slug: trustmoore}   # 4/13
+- {name: "TSC Life", ats: personio, slug: tsc-life}   # 2/5
+- {name: "Tweede Kamer der Staten-Generaal", ats: recruitee, slug: tweedekamer}   # 4/4
+- {name: "Twintos", ats: recruitee, slug: twintos}   # 2/2
+- {name: "UAB-Online", ats: recruitee, slug: uabonline}   # 3/3
+- {name: "Uber Freight Europe Holdings", ats: greenhouse, slug: uberfreight}   # 16/98
+- {name: "uMOB", ats: recruitee, slug: umob}   # 1/1
+- {name: "Upfront", ats: recruitee, slug: upfront}   # 28/28
+- {name: "USG Engineering Professionals", ats: smartrecruiters, slug: usgengineering}   # 17/17
+- {name: "UV Smart Technologies", ats: recruitee, slug: uvsmart}   # 1/1
+- {name: "Valiantys", ats: lever, slug: valiantys}   # 1/18
+- {name: "Van Ameyde", ats: smartrecruiters, slug: vanameyde}   # 1/1
+- {name: "Van Doorne", ats: recruitee, slug: vandoorne}   # 1/1
+- {name: "Van Oers Snacks", ats: recruitee, slug: vanoers}   # 78/78
+- {name: "Varrlyn", ats: smartrecruiters, slug: varrlyn}   # 4/4
+- {name: "Vartion", ats: personio, slug: vartion}   # 1/1
+- {name: "Vekoma Rides Engineering", ats: recruitee, slug: vekomarides}   # 15/15
+- {name: "Vesper", ats: recruitee, slug: vesper}   # 6/8
+- {name: "VI Company Financials", ats: recruitee, slug: vicompany}   # 1/1
+- {name: "Vialis", ats: recruitee, slug: vialis}   # 66/67
+- {name: "ViCentra", ats: recruitee, slug: vicentra}   # 20/22
+- {name: "VIKTOR", ats: recruitee, slug: viktor}   # 4/4
+- {name: "Virtuagym", ats: teamtailor, slug: virtuagym}   # 7/14
+- {name: "Vlisco", ats: teamtailor, slug: vlisco}   # 17/17
+- {name: "Volker Wessels Telecom", ats: recruitee, slug: volkerwessels}   # 6/6
+- {name: "VolkerRail", ats: recruitee, slug: volkerrail}   # 52/53
+- {name: "VONQ", ats: smartrecruiters, slug: vonq}   # 4/5
+- {name: "VSParticle", ats: recruitee, slug: vsparticle}   # 1/1
+- {name: "VSTEP", ats: personio, slug: vstep}   # 1/1
+- {name: "VW Consultancy", ats: personio, slug: vw-consultancy}   # 4/4
+- {name: "Weaviate", ats: ashby, slug: weaviate}   # 1/2
+- {name: "Werkspot", ats: smartrecruiters, slug: werkspot}   # 2/2
+- {name: "Westfort Vleesproducten", ats: recruitee, slug: westfortvleesproducten}   # 32/32
+- {name: "WETRAVEL", ats: ashby, slug: wetravel}   # 7/15
+- {name: "Wienerberger", ats: teamtailor, slug: wienerberger}   # 76/77
+- {name: "William Blair", ats: greenhouse, slug: williamblair}   # 1/49
+- {name: "Winston Taylor", ats: recruitee, slug: winstontaylor}   # 15/16
+- {name: "WPP Media", ats: greenhouse, slug: wppmedia}   # 34/805
+- {name: "Xeltis", ats: teamtailor, slug: xeltis}   # 4/5
+- {name: "Xomnia", ats: recruitee, slug: xomnia}   # 13/13
+- {name: "Yellowtail", ats: recruitee, slug: yellowtail}   # 36/36
+- {name: "Yenlo", ats: recruitee, slug: yenlo}   # 4/5
+- {name: "Yeply", ats: teamtailor, slug: yeply}   # 10/16
+- {name: "Ynvolve", ats: recruitee, slug: ynvolve}   # 8/8, на доске «the Infinite Group B.V.»
+- {name: "Young Colfield", ats: recruitee, slug: youngcolfield}   # 8/8
+- {name: "Zanders", ats: teamtailor, slug: zanders}   # 13/25
+- {name: "ZEEKR EU", ats: teamtailor, slug: zeekreu}   # 5/15
+- {name: "Zero Motorcycles", ats: recruitee, slug: zeromotorcycles}   # 6/6
+- {name: "ZeroTier", ats: lever, slug: zerotier}   # 3/6
+- {name: "ZorgDomein", ats: recruitee, slug: zorgdomein}   # 5/5
+- {name: "Zscaler", ats: greenhouse, slug: zscaler}   # 5/377
+- {name: "Zwart Techniek", ats: recruitee, slug: zwarttechniek}   # 25/27

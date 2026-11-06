@@ -1,0 +1,11 @@
+[Unit]
+Description=jobsearch: nightly deep LinkedIn pass
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=jobsearch
+WorkingDirectory=/opt/jobsearch
+ExecStart=/opt/jobsearch/deploy/run-server.sh deep
+Nice=10

@@ -1,0 +1,8 @@
+# Свои компании: доски вакансий на публичных ATS. Лежит в my/companies.yaml и опрашивается первым.
+# Найти доску по названию компании: python -m jobsearch discover "Company One" "Company Two"
+# (печатает готовые строки). Поддерживаются: greenhouse, lever, ashby, recruitee, workable, smartrecruiters,
+# teamtailor, personio, workday (slug: tenant/wd3/Site), rmk, beesite, phenom — см. boards/curated.yaml.
+#
+# - {name: Mollie, ats: greenhouse, slug: mollie}
+# - {name: Bunq, ats: workable, slug: bunq}
+[]

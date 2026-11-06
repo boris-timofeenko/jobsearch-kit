@@ -1,0 +1,39 @@
+<!doctype html>
+<!-- Ashby-like: yes/no as two buttons without type (= submit!), combobox location with async options. -->
+<html><body>
+<form id="f" onsubmit="window.submitted = true; return false">
+  <div class="ashby-application-form-field-entry"><label for="_systemfield_name">Name</label>
+    <input id="_systemfield_name" name="_systemfield_name" placeholder="Type here..."></div>
+  <div class="ashby-application-form-field-entry"><label for="_systemfield_email">Email</label>
+    <input id="_systemfield_email" name="_systemfield_email" type="email" placeholder="hello@example.com..."></div>
+  <div class="ashby-application-form-field-entry"><label for="p1">Phone number</label>
+    <input id="p1" name="415302c7" type="tel" placeholder="1-415-555-1234..."></div>
+  <div class="ashby-application-form-field-entry"><label for="_systemfield_resume">Resume</label>
+    <input id="_systemfield_resume" type="file" style="display:none"><button>Upload File</button></div>
+  <div class="ashby-application-form-field-entry"><label for="loc">Location</label>
+    <input id="loc" role="combobox" aria-expanded="false" aria-controls="loc-list" placeholder="Start typing...">
+    <div id="loc-list" role="listbox"></div></div>
+  <div class="ashby-application-form-field-entry">
+    <label>Are you willing to work from the required location?</label>
+    <div class="yesno"><button class="opt" id="yes">Yes</button><button class="opt" id="no">No</button></div>
+    <input type="checkbox" name="bae03e57" style="display:none">
+  </div>
+  <div class="ashby-application-form-field-entry"><label for="add">Aditional Information</label>
+    <textarea id="add" placeholder="Type here..."></textarea></div>
+  <button type="submit">Submit Application</button>
+</form>
+<script>
+  document.querySelectorAll('button.opt').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('button.opt').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+    b.setAttribute('aria-pressed', 'true');
+    window.answer = b.textContent;
+  }));
+  const loc = document.getElementById('loc'), list = document.getElementById('loc-list');
+  loc.addEventListener('input', () => setTimeout(() => {
+    loc.setAttribute('aria-expanded', 'true');
+    list.innerHTML = ['Belgrade, Serbia', 'Belgium'].filter((c) => c.toLowerCase().startsWith(loc.value.toLowerCase().slice(0, 3)))
+      .map((c) => `<div role="option">${c}</div>`).join('');
+    list.querySelectorAll('[role=option]').forEach((o) => o.addEventListener('click', () => { loc.value = o.textContent; window.pickedLocation = o.textContent; list.innerHTML = ''; }));
+  }, 400));
+</script>
+</body></html>

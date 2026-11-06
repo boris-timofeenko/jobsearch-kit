@@ -1,0 +1,11 @@
+[Unit]
+Description=jobsearch: collect and triage job postings (fast mode)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=jobsearch
+WorkingDirectory=/opt/jobsearch
+ExecStart=/opt/jobsearch/deploy/run-server.sh fast
+Nice=10

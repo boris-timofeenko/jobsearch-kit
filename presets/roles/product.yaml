@@ -1,0 +1,41 @@
+role:
+  # Пресет: продакт-менеджер (Product Manager / Product Owner).
+  name: "Product Manager / Product Owner"
+  definition: "управление цифровым продуктом: discovery, приоритизация, roadmap, работа с командой разработки и метриками; технический PM тоже подходит"
+  not_this_role: >
+    project manager без продуктовой ответственности, продажи и account management, маркетинг (кроме product marketing,
+    если оно в цели), product manager в FMCG/производстве физических товаров, бизнес-аналитик, scrum master
+  strengths: ""
+  small_gap: "другой домен при том же типе продукта (B2B SaaS, маркетплейс), другой масштаб команды"
+
+  queries: [Product Manager, Senior Product Manager, Product Owner, Technical Product Manager, Lead Product Manager,
+            Group Product Manager]
+  keywords: [product manager, product owner]
+  categories:
+    remotive: product
+    jobicy: product
+    weworkremotely: [remote-product-jobs]
+    themuse: Product Management
+    arbeitsagentur: [Produktmanager, Product Owner]
+
+  title_include:
+    - '\b(product (manager|owner|lead)|head of product|director of product|vp,? product|cpo|productmanager|produktmanager)\b'
+  title_exclude:
+    - '\b(product marketing|product designer|product engineer|product analyst|product support|product specialist|sales|account|project manager|scrum master)\b'
+    - '\b(fmcg|food|beverage|packaging|pharma|medical device|cosmetics|fashion buyer|category manager)\b'
+    - '\b(do not apply|test job|testjob)\b'
+  title_boost:
+    '\b(product (manager|owner|lead))\b': 6
+
+  stack:
+    'b2b|saas': 2
+    'discovery|user research': 2
+    'roadmap': 1
+    'a/b test|experimentation': 2
+    'sql|analytics|amplitude|mixpanel': 1
+    'api|platform': 1
+    'fintech|payments?': 2
+    'relocation|visa sponsorship|highly skilled migrant|kennismigrant|blue card': 6
+  focus: []
+  penalties: []
+  off_domain: {}

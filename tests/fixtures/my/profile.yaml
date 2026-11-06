@@ -1,0 +1,214 @@
+# QA-профиль для тестов: тот же, на котором калибровались правила (роль, страны, поправки к fit).
+candidate:
+  name: Test Candidate
+  summary: Senior SDET / QA Tech Lead, 8 лет в разработке, 5 в QA. Playwright (TypeScript), Flutter + Patrol, Appium, Python,
+    k6. Fintech и payments. Java, C#, Kotlin в резюме нет.
+  languages:
+  - English
+  - Russian
+  seniority: senior
+  citizenship_note: Гражданин страны вне ЕС, живёт вне ЕС
+role:
+  title_include:
+  - \b(qa|sdet|test(s|ing|er)?|tests?\b|quality (assurance|engineer|automation|analyst)|software quality)
+  - \b(test automation|automation (test|qa|engineer)|engineer in test|quality engineering|softwaretester|\w+tester)\b
+  - \b(kwaliteit|testautomati|testengineer|testanalist|testconsultant)
+  title_exclude:
+  - \b(a/?b test|penetration|pentest|quality manager|product manager|account|sales|marketing|recruiter|copywriter|designer|nurse|clinical|laborator|lab
+    technician|food|chemist|welder|electrical|mechanical|civil|hvac)\b
+  - \b(devops|network|infrastructure|sre|site reliability|risk|compliance|rpa|process automation|workflow automation|marketing
+    automation|cloud automation|data engineer|data analyst|business analyst|financial analyst)\b
+  - \b(release manager|devsecops|functioneel|tijdelijk|qaqc|mb testing|board testing|ict beheer|audit|technician|seal testing|test
+    bench|testsysteme|canoe|security testing|dast)\b
+  - \b(do not apply|test job|testjob)\b
+  stack:
+    playwright: 4
+    typescript: 3
+    javascript|node\.?js: 2
+    appium|patrol|mobile: 3
+    flutter|dart: 3
+    python|pytest: 2
+    cucumber|gherkin|bdd: 2
+    wiremock|api test: 2
+    k6|jmeter|performance test: 1
+    github actions|gitlab ci|ci/cd|jenkins: 1
+    kubernetes|docker|gcp: 1
+    fintech|payments?|banking|psd2: 3
+    travel|booking: 1
+    \bllm|ai[- ]agent|generative|genai|machine learning: 3
+    cypress|selenium|webdriver: 1
+    relocation|visa sponsorship|highly skilled migrant|kennismigrant|30% ruling: 6
+  focus:
+  - name: Flutter/Patrol
+    regex: \bflutter\b|\bpatrol\b[^.\n]{0,60}\b(flutter|appium|playwright|cypress|selenium|webdriverio|detox|maestro|espresso|xcuitest|e2e)\b|\b(flutter|appium|playwright|cypress|selenium|webdriverio|detox|maestro|espresso|xcuitest)\b[^.\n]{0,60}\bpatrol\b
+    score: 8
+    fit: 2
+  - name: Playwright TS/JS
+    regex: \bplaywright\b(?=[\s\S]*\b(typescript|javascript|node\.?js)\b)|\b(typescript|javascript|node\.?js)\b(?=[\s\S]*\bplaywright\b)
+    score: 6
+    fit: 1
+  - name: LLM/AI-агенты в тексте
+    regex: \b(llms?|large language models?|gen ?ai|generative ai|ai agents?|agentic|ai[- ]first|ai[- ]driven|ai[- ]native|rag|evals?|llm[-
+      ]as[- ]a[- ]judge|prompt injection|red[- ]teaming)\b
+    score: 6
+    fit: 0
+  not_this_role: 'Железо, полупроводники, PCB, фотоника, производство, ISO 9001/GMP/фарма, аудит, data quality, security/pentest,
+    ручное тестирование без кода, QA-рейтеры/разметка данных, "QA manager" в производстве.
+
+    '
+  name: QA / SDET (автоматизация тестирования)
+  definition: 'тестирование ПО: QA и test automation, SDET, quality engineering софта, QA lead'
+  small_gap: другой инструмент того же типа, например Cypress вместо Playwright; другой домен
+  keywords:
+  - test
+  - QA
+  - quality engineer
+  - SDET
+  - tester
+  categories:
+    remotive: qa
+    jobicy: testing
+    arbeitsagentur:
+    - Testautomatisierung
+    - Softwaretester
+  title_boost:
+    \b(sdet|automation|automatiser|engineer in test)\b: 8
+  penalties:
+  - name: только ручное тестирование по тексту
+    regex: \bmanual (testing|tester|qa)\b
+    unless: \b(automation|automated|selenium|playwright|cypress|appium|pytest|api test|ci/cd|test framework)\b
+    score: 15
+  off_domain:
+    name: железо / промышленное QA
+    title: \b(hardware|pcb|pcba|hil|embedded|firmware|mechanical|electrical|electronics|manufacturing|production|industrial|ot|plc|scada|semiconductor|lithography|mechatronic|automotive|calibration|metrology|laboratory|lab|quality
+      inspector|quality control inspector|qc inspector|qa/qc|supplier quality|process quality|quality manager|qhse|hse|food|pharma|gmp|medical
+      device|nen|iso ?9001|instrumentation|c&i|isotopes|space|product assurance|pa/qa|nuclear|packaging|welding|construction|infra|silicon|asic|fpga|rf|optical|photonics)\b
+    desc: \b(pcba|iso ?9001|iso ?13485|iatf ?16949|fmea|capa|8d report|gmp|hardware[- ]in[- ]the[- ]loop|oscilloscope|soldering|cleanroom)\b
+  strengths: AI в QA (AI-first тестирование, тестирование LLM-агентов, evals, LLM-as-a-judge), мобильная автоматизация на
+    Flutter/Patrol и Playwright на TypeScript/JavaScript
+  queries:
+  - QA Automation Engineer
+  - Test Automation Engineer
+  - SDET
+  - Software Engineer in Test
+  - QA Lead
+  - Quality Engineer
+  - Senior QA Engineer
+  - QA Engineer
+target:
+  country:
+    code: nl
+    salary_floor_month: 4357
+    label: 🇳🇱 Нидерланды (HSM-трек)
+    location_regex: \b(netherlands|nederland|holland|amsterdam|rotterdam|utrecht|eindhoven|the hague|den haag|groningen|leiden|delft|haarlem|amstelveen|hilversum|nijmegen|tilburg|breda|arnhem|zwolle|enschede|maastricht|almere|apeldoorn|hoofddorp|schiphol|veldhoven|'s-hertogenbosch|den
+      bosch|amersfoort|zeist|\bnl\b)
+  countries:
+  - code: be
+    name: Belgium
+    label: 🇧🇪 Бельгия
+    location_regex: \b(belgium|belgië|belgique|brussels|brussel|bruxelles|antwerp|antwerpen|ghent|gent|leuven|mechelen|hasselt|liège|namur|charleroi|bruges|brugge|kortrijk|flemish
+      region|flanders|vlaanderen|wallonia)
+    salary_floor_month: 4500
+    visa_scheme: EU Blue Card / single permit
+  - code: fr
+    name: France
+    label: 🇫🇷 Франция
+    location_regex: \b(france|paris|lyon|marseille|toulouse|nantes|bordeaux|lille|nice|rennes|grenoble|montpellier|strasbourg|sophia
+      antipolis|île-de-france|ile-de-france)
+    salary_floor_month: 4400
+    visa_scheme: Passeport Talent / EU Blue Card
+  - code: de
+    name: Germany
+    label: 🇩🇪 Германия
+    location_regex: \b(germany|deutschland|berlin|munich|münchen|hamburg|frankfurt|cologne|köln|köln|düsseldorf|stuttgart|leipzig|dresden|hannover|nuremberg|nürnberg|karlsruhe|bremen|dortmund|essen|bonn|mannheim|heidelberg)
+    salary_floor_month: 4000
+    visa_scheme: EU Blue Card
+  salary_target_month: 5000
+  remote_base: страна вне ЕС
+  goal_note: Главная цель — попасть в ЕС по рабочей визе; предпочтительно Нидерланды.
+  fit_adjustments:
+    sponsorship_yes: 2
+    relocation_yes: 1
+    ai_qa_first: 3
+    ai_qa_product: 2
+    ai_qa_tooling: 1
+    agency: -1
+    consultancy: -1
+    contractor: -2
+    low_competition: 1
+    low_competition_max: 25
+    high_competition: -1
+    high_competition_min: 150
+  location_penalty:
+    nl: -1
+    be: 1
+    fr: 1
+    de: 1
+    eu: 2
+    remote_nl: 2
+    remote: 3
+    other: 3
+  remote_track_label: 🌍 Remote EU (трек «доход»)
+  remote_entity_label: 🇳🇱🌍 Remote EU у компаний с NL-юрлицом в реестре IND
+known_companies:
+  applied:
+  - Northwind Payments
+  - Contoso Travel
+  rejected:
+  - Fabrikam Print
+  paused: []
+  planned: []
+exclude_companies:
+- Thales
+- Ministerie van Defensie
+- Defensie
+- Rijksoverheid
+- Jobster
+- Free-Work
+- mamgo
+- OverheidZZP
+sponsor_aliases:
+  Funda: Funda Real Estate B.V.
+  Harver: Harver Ops B.V.
+  Nationale-Nederlanden: NN Personeel B.V.
+  NN Group: NN Personeel B.V.
+  TOPIC Embedded Systems: TOPIC Software Development B.V.
+  BUX: BUX Technology B.V.
+agency_companies:
+- Spilberg
+- Independent Recruiters
+- Robert Walters
+- Huxley
+- Hays
+- Michael Page
+- Page Personnel
+- Randstad
+- Yacht
+- Brunel
+- Computer Futures
+- Progressive Recruitment
+- Darwin Recruitment
+- Amoria Bond
+- Nigel Frank
+- Levy
+- YER
+- SThree
+- Experis
+- Manpower
+- Adecco
+- Tempo-Team
+- Harvey Nash
+- Talent&Pro
+- Ordina Recruitment
+- Oliver James
+- Trinamics
+- Hunter Select
+- Undutchables
+- Adams Multilingual
+- Lemon.io
+- Toptal
+- Turing
+- Crossover
+- EPAM Anywhere
+- Proxify
+- Remotely

@@ -1,0 +1,47 @@
+role:
+  # Пресет: backend-разработка. Стек и запросы подстрой под себя (скилл /jobsearch-setup делает это по резюме).
+  name: "Backend-разработчик"
+  definition: "разработка серверной части ПО: API, сервисы, базы данных, интеграции, распределённые системы; full-stack с упором на backend тоже подходит"
+  not_this_role: >
+    чистый frontend, мобильная разработка, QA/тестирование, DevOps/SRE без разработки, data science/ML-исследования,
+    embedded/железо, техподдержка, presales/solutions engineer, 1С/SAP/Salesforce-консалтинг, геймдев
+  strengths: ""
+  small_gap: "другой фреймворк того же языка (Django вместо FastAPI), другая БД или брокер, другой домен"
+
+  queries: [Backend Engineer, Backend Developer, Software Engineer, Python Developer, Senior Backend Engineer,
+            Java Developer, Golang Developer, Platform Engineer, Full Stack Engineer]
+  keywords: [backend, software engineer, developer, python, java]
+  categories:
+    remotive: software-dev
+    jobicy: backend
+    weworkremotely: [remote-back-end-programming-jobs, remote-full-stack-programming-jobs]
+    themuse: Software Engineering
+    arbeitsagentur: [Backend-Entwickler, Softwareentwickler]
+
+  title_include:
+    - '\b(back[- ]?end|server[- ]side|api|platform|integration|payments?|distributed systems?)\b[^,|]{0,20}\b(engineer|developer|dev)\b'
+    - '\b(python|go|golang|java|kotlin|scala|node(\.?js)?|php|ruby|rails|django|\.net|c#|elixir|rust)\b[^,|]{0,20}\b(engineer|developer|dev)\b'
+    - '\b(software (engineer|developer)|full[- ]?stack|softwareentwickler)\b'
+    - '\b(backend|back-end|java|python|php|golang|go|software)[- ]?entwickler'      # немецкие заголовки
+  title_exclude:
+    - '\b(front[- ]?end|frontend|ios|android|mobile|flutter|react native|qa|tester|test automation|sdet|engineer in test)\b'
+    - '\b(devops|sre|site reliability|data (engineer|scientist|analyst)|machine learning|ml engineer|embedded|firmware|hardware|electrical|mechanical)\b'
+    - '\b(sales|support|customer|solutions? (engineer|architect)|presales|pre-sales|recruiter|designer|marketing|product manager|account|game|unity|unreal|salesforce|sap|servicenow|dynamics)\b'
+    - '\b(do not apply|test job|testjob)\b'
+  title_boost:
+    '\b(back[- ]?end|platform|api)\b': 8
+
+  stack:
+    python: 3
+    'fastapi|django|flask': 2
+    'postgres|postgresql': 2
+    'kafka|rabbitmq': 1
+    redis: 1
+    'docker|kubernetes': 1
+    'aws|gcp|azure': 1
+    'microservices|distributed systems': 2
+    'fintech|payments?|banking': 2
+    'relocation|visa sponsorship|highly skilled migrant|kennismigrant|blue card': 6
+  focus: []
+  penalties: []
+  off_domain: {}

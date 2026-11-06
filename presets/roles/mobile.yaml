@@ -1,0 +1,43 @@
+role:
+  # Пресет: мобильная разработка (iOS / Android / кроссплатформа).
+  name: "Мобильный разработчик"
+  definition: "разработка мобильных приложений: iOS (Swift), Android (Kotlin), Flutter, React Native"
+  not_this_role: >
+    веб-frontend без мобильной части, backend, QA/тестирование мобильных приложений, геймдев на Unity/Unreal,
+    embedded/железо, техподдержка
+  strengths: ""
+  small_gap: "другая платформа при сильной кроссплатформенной базе (Flutter вместо React Native), другой домен"
+
+  queries: [Mobile Engineer, iOS Developer, Android Developer, Flutter Developer, React Native Developer,
+            Senior iOS Engineer, Senior Android Engineer, Mobile Developer]
+  keywords: [mobile, ios, android, flutter, react native]
+  categories:
+    remotive: software-dev
+    jobicy: mobile
+    weworkremotely: [remote-programming-jobs]
+    themuse: Software Engineering
+    arbeitsagentur: [App-Entwickler, iOS-Entwickler, Android-Entwickler]
+
+  title_include:
+    - '\b(mobile|ios|android|flutter|react native|swift|kotlin|app)\b[^,|]{0,20}\b(engineer|developer|dev)\b'
+    - '\b(ios|android|flutter|react native)\b'
+    - '\b(app|ios|android|mobile)[- ]?entwickler'      # немецкие заголовки
+  title_exclude:
+    - '\b(qa|tester|test automation|sdet|engineer in test|game|unity|unreal|embedded|firmware|hardware|automotive)\b'
+    - '\b(sales|support|customer|solutions? (engineer|architect)|presales|recruiter|designer|marketing|product manager|account)\b'
+    - '\b(do not apply|test job|testjob)\b'
+  title_boost:
+    '\b(ios|android|flutter|mobile)\b': 8
+
+  stack:
+    swift: 3
+    'swiftui|uikit': 2
+    kotlin: 3
+    'jetpack compose': 2
+    'flutter|dart': 3
+    'react native': 2
+    'firebase|app store|google play': 1
+    'relocation|visa sponsorship|highly skilled migrant|kennismigrant|blue card': 6
+  focus: []
+  penalties: []
+  off_domain: {}

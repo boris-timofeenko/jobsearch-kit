@@ -1,0 +1,66 @@
+role:
+  # Пресет: QA / SDET / автоматизация тестирования. Откалиброван на реальном поиске (сентябрь–ноябрь 2026).
+  name: "QA / SDET (автоматизация тестирования)"
+  # что считается этой ролью — текст для модели (поле is_target_role)
+  definition: "тестирование ПО: QA и test automation, SDET, quality engineering софта, QA lead"
+  # что модель должна считать «не той ролью»
+  not_this_role: >
+    железо, полупроводники, PCB, фотоника, производство, ISO 9001/GMP/фарма, аудит, data quality,
+    security/pentest, ручное тестирование без кода, QA-рейтеры/разметка данных, "QA manager" в производстве
+  # необязательно: сильнейшие стороны (заполни по резюме) — модель считает их весомым совпадением
+  strengths: ""
+  # что для этой роли «мелкий пробел» на шкале 7–8
+  small_gap: "другой инструмент того же типа, например Cypress вместо Playwright; другой домен"
+
+  # Поиск. queries — названия вакансий для LinkedIn и агрегаторов, самые широкие первыми: остальные страны и
+  # remote ищутся только по первым четырём. keywords — короткие слова для сайтов крупных компаний и тегов.
+  queries: [QA Automation Engineer, Test Automation Engineer, SDET, QA Engineer, Software Engineer in Test, QA Lead,
+            Quality Engineer, Senior QA Engineer, Test Engineer, Quality Engineering, Software Engineer Quality]
+  keywords: [test, QA, quality engineer, SDET, tester]
+  categories:                     # категории на досках, где поиск идёт по категории
+    remotive: qa
+    jobicy: testing
+    arbeitsagentur: [Testautomatisierung, Softwaretester]   # немецкие названия (если ищешь в Германии)
+
+  # Фильтр заголовков (регэкспы, регистр не важен): include — «наша» роль, exclude — соседние и ложные совпадения
+  title_include:
+    - '\b(qa|sdet|test(s|ing|er)?|tests?\b|quality (assurance|engineer|automation|analyst)|software quality)'
+    - '\b(test automation|automation (test|qa|engineer)|engineer in test|quality engineering|softwaretester|\w+tester)\b'
+    - '\b(kwaliteit|testautomati|testengineer|testanalist|testconsultant)'
+  title_exclude:
+    - '\b(a/?b test|penetration|pentest|quality manager|product manager|account|sales|marketing|recruiter|copywriter|designer|nurse|clinical|laborator|lab technician|food|chemist|welder|electrical|mechanical|civil|hvac)\b'
+    - '\b(devops|network|infrastructure|sre|site reliability|risk|compliance|rpa|process automation|workflow automation|marketing automation|cloud automation|data engineer|data analyst|business analyst|financial analyst)\b'
+    - '\b(release manager|devsecops|functioneel|tijdelijk|qaqc|mb testing|board testing|ict beheer|audit|technician|seal testing|test bench|testsysteme|canoe|security testing|dast)\b'
+    - '\b(do not apply|test job|testjob)\b'
+  title_boost:                    # слова в заголовке, отмечающие ядро роли: +баллы к score
+    '\b(sdet|automation|automatiser|engineer in test)\b': 8
+
+  # Совпадения в тексте вакансии: плюс к score (до 20 в сумме). Подстрой под своё резюме.
+  stack:
+    playwright: 3
+    'typescript|javascript': 2
+    'python|pytest': 2
+    'appium|mobile': 2
+    'cypress|selenium|webdriver': 1
+    'api test|rest assured|postman': 2
+    'k6|jmeter|performance test': 1
+    'github actions|gitlab ci|ci/cd|jenkins': 1
+    'docker|kubernetes': 1
+    'relocation|visa sponsorship|highly skilled migrant|kennismigrant|blue card': 6
+  # Фокусные темы: сильнейшее у тебя. score — к эвристике (вне потолка stack), fit — к итоговому fit после модели.
+  focus: []
+  #  - name: Playwright TS/JS
+  #    regex: '\bplaywright\b(?=[\s\S]*\b(typescript|javascript)\b)|\b(typescript|javascript)\b(?=[\s\S]*\bplaywright\b)'
+  #    score: 6
+  #    fit: 1
+  # Красные флаги в тексте: пометка и минус к score
+  penalties:
+    - name: "только ручное тестирование по тексту"
+      regex: '\bmanual (testing|tester|qa)\b'
+      unless: '\b(automation|automated|selenium|playwright|cypress|appium|pytest|api test|ci/cd|test framework)\b'
+      score: 15
+  # «Не тот домен» до модели: скип, который модель может снять, если по тексту это всё-таки софтверное QA
+  off_domain:
+    name: "железо / промышленное QA"
+    title: '\b(hardware|pcb|pcba|hil|embedded|firmware|mechanical|electrical|electronics|manufacturing|production|industrial|ot|plc|scada|semiconductor|lithography|mechatronic|automotive|calibration|metrology|laboratory|lab|quality inspector|quality control inspector|qc inspector|qa/qc|supplier quality|process quality|quality manager|qhse|hse|food|pharma|gmp|medical device|nen|iso ?9001|instrumentation|c&i|isotopes|space|product assurance|pa/qa|nuclear|packaging|welding|construction|infra|silicon|asic|fpga|rf|optical|photonics)\b'
+    desc: '\b(pcba|iso ?9001|iso ?13485|iatf ?16949|fmea|capa|8d report|gmp|hardware[- ]in[- ]the[- ]loop|oscilloscope|soldering|cleanroom)\b'

@@ -1,0 +1,9 @@
+[Unit]
+Description=jobsearch deep LinkedIn pass, 00:15 (nothing competes with it until the 08:15 fast run)
+
+[Timer]
+OnCalendar=*-*-* 00:15:00 Europe/Amsterdam
+Persistent=true
+
+[Install]
+WantedBy=timers.target

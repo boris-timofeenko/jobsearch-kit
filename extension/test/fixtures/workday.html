@@ -1,0 +1,68 @@
+<!doctype html>
+<!-- Workday-like: data-automation-id everywhere, repeated experience/education blocks, month/year date parts,
+     dropdown buttons that open a listbox, "I currently work here" checkbox. -->
+<html><body>
+<form onsubmit="window.submitted = true; return false">
+  <h3>My Information</h3>
+  <div data-automation-id="formField-legalNameSection_firstName"><label for="n1">Given Name(s)</label><input id="n1" data-automation-id="legalNameSection_firstName"></div>
+  <div data-automation-id="formField-legalNameSection_lastName"><label for="n2">Family Name</label><input id="n2" data-automation-id="legalNameSection_lastName"></div>
+  <div data-automation-id="formField-addressLine1"><label for="a1">Address Line 1</label><input id="a1" data-automation-id="addressSection_addressLine1"></div>
+  <div data-automation-id="formField-city"><label for="c1">City</label><input id="c1" data-automation-id="addressSection_city"></div>
+  <div data-automation-id="formField-postalCode"><label for="z1">Postal Code</label><input id="z1" data-automation-id="addressSection_postalCode"></div>
+  <div data-automation-id="formField-countryRegion"><label id="cl">Country</label>
+    <button type="button" aria-haspopup="listbox" aria-labelledby="cl" id="countryBtn" data-automation-id="countryDropdown">Select One</button></div>
+  <div data-automation-id="formField-phoneType"><label id="ptl">Phone Device Type</label>
+    <button type="button" aria-haspopup="listbox" aria-labelledby="ptl" id="ptBtn">Select One</button></div>
+  <div data-automation-id="formField-countryPhoneCode"><label for="pc">Country Phone Code</label>
+    <select id="pc"><option value="">Select One</option><option value="31">Netherlands (+31)</option><option value="381">Serbia (+381)</option></select></div>
+  <div data-automation-id="formField-phoneNumber"><label for="pn">Phone Number</label><input id="pn" data-automation-id="phone-number"></div>
+
+  <h3>My Experience</h3>
+  <section data-automation-id="workExperienceSection">
+    <div data-automation-id="workExperience-1"><h4>Work Experience 1</h4>
+      <div><label for="t1">Job Title</label><input id="t1" data-automation-id="jobTitle"></div>
+      <div><label for="co1">Company</label><input id="co1" data-automation-id="company"></div>
+      <div><label for="l1">Location</label><input id="l1" data-automation-id="location"></div>
+      <div><label><input type="checkbox" id="cur1" data-automation-id="currentlyWorkHere"> I currently work here</label></div>
+      <div data-automation-id="formField-startDate"><label>From</label>
+        <input id="s1m" aria-label="Month" data-automation-id="dateSectionMonth-input"><input id="s1y" aria-label="Year" data-automation-id="dateSectionYear-input"></div>
+      <div data-automation-id="formField-endDate"><label>To</label>
+        <input id="e1m" aria-label="Month" data-automation-id="dateSectionMonth-input"><input id="e1y" aria-label="Year" data-automation-id="dateSectionYear-input"></div>
+      <div><label for="d1">Role Description</label><textarea id="d1" data-automation-id="description"></textarea></div>
+    </div>
+    <div data-automation-id="workExperience-2"><h4>Work Experience 2</h4>
+      <div><label for="t2">Job Title</label><input id="t2" data-automation-id="jobTitle"></div>
+      <div><label for="co2">Company</label><input id="co2" data-automation-id="company"></div>
+      <div><label><input type="checkbox" id="cur2" data-automation-id="currentlyWorkHere"> I currently work here</label></div>
+      <div data-automation-id="formField-startDate"><label>From</label>
+        <input id="s2m" aria-label="Month" data-automation-id="dateSectionMonth-input"><input id="s2y" aria-label="Year" data-automation-id="dateSectionYear-input"></div>
+      <div data-automation-id="formField-endDate"><label>To</label>
+        <input id="e2m" aria-label="Month" data-automation-id="dateSectionMonth-input"><input id="e2y" aria-label="Year" data-automation-id="dateSectionYear-input"></div>
+    </div>
+  </section>
+  <section data-automation-id="educationSection">
+    <div data-automation-id="education-1"><h4>Education 1</h4>
+      <div><label for="sch1">School or University</label><input id="sch1" data-automation-id="school"></div>
+      <div><label id="dgl">Degree</label><button type="button" aria-haspopup="listbox" aria-labelledby="dgl" id="degBtn">Select One</button></div>
+      <div><label for="fos1">Field of Study</label><input id="fos1" data-automation-id="fieldOfStudy"></div>
+      <div data-automation-id="formField-firstYearAttended"><label>From</label><input id="ey1" aria-label="Year" data-automation-id="dateSectionYear-input"></div>
+      <div data-automation-id="formField-lastYearAttended"><label>To (Actual or Expected)</label><input id="ey2" aria-label="Year" data-automation-id="dateSectionYear-input"></div>
+    </div>
+  </section>
+  <fieldset><legend>Have you previously worked for this company?</legend>
+    <label><input type="radio" name="prev" value="1"> Yes</label><label><input type="radio" name="prev" value="0"> No</label></fieldset>
+  <button type="submit">Save and Continue</button>
+</form>
+<div id="popup" role="listbox" style="position:absolute;top:0;left:0"></div>
+<script>
+  const lists = { countryBtn: ['Montenegro', 'Serbia', 'Spain'], ptBtn: ['Home', 'Mobile', 'Work'], degBtn: ["Bachelor's Degree", "Master's Degree", 'Doctorate'] };
+  for (const [id, items] of Object.entries(lists)) {
+    const btn = document.getElementById(id);
+    btn.addEventListener('click', () => {
+      const pop = document.getElementById('popup');
+      pop.innerHTML = items.map((t) => `<div role="option" data-automation-id="promptOption">${t}</div>`).join('');
+      pop.querySelectorAll('[role=option]').forEach((o) => o.addEventListener('click', () => { btn.textContent = o.textContent; pop.innerHTML = ''; }));
+    });
+  }
+</script>
+</body></html>

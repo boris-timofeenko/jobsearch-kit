@@ -1,0 +1,55 @@
+{
+ "version": 1,
+ "generated": "2026-09-24",
+ "person": {
+  "full_name": "Alex Example",
+  "first_name": "Alex",
+  "last_name": "Example",
+  "email": "alex@example.com",
+  "phone": {"e164": "+381601234567", "international": "+381 60 123 4567", "country_code": "+381", "national": "60 123 4567"},
+  "linkedin": "https://www.linkedin.com/in/alex-example",
+  "github": "https://github.com/alex-example",
+  "telegram": "https://t.me/alex_example",
+  "website": "",
+  "nationality": "Russian",
+  "citizenship_country": "Russia",
+  "date_of_birth": ""
+ },
+ "location": {
+  "city": "Belgrade", "country": "Serbia", "display": "Belgrade, Serbia", "country_aliases": ["Republic of Serbia"],
+  "address": "Example street 1", "postal_code": "11000"
+ },
+ "headline": "Senior SDET / Test Automation Engineer",
+ "summary": "Senior SDET with 8 years in software engineering, 5 of them in QA.",
+ "experience": [
+  {"title": "QA Tech Lead", "title_history": ["QA Tech Lead"], "company": "Acme Pay", "location": "Johannesburg, South Africa",
+   "remote": true, "start": {"year": 2025, "month": 11}, "end": null, "current": true,
+   "description": "- Built end-to-end automation from 0 to ~450 scenarios.\n- Lead a team of 3 QA engineers."},
+  {"title": "Senior QA Engineer", "title_history": ["QA Engineer", "Senior QA Engineer"], "company": "Travel Soft", "location": "Montenegro",
+   "remote": true, "start": {"year": 2021, "month": 9}, "end": {"year": 2025, "month": 8}, "current": false,
+   "description": "- Grew automated coverage from ~80 to ~550 cases."},
+  {"title": "Frontend Developer", "title_history": ["Frontend Developer"], "company": "Web Studio", "location": "Russia",
+   "remote": false, "start": {"year": 2018, "month": 10}, "end": {"year": 2021, "month": 1}, "current": false,
+   "description": "- Production code in JavaScript and TypeScript."}
+ ],
+ "education": [
+  {"degree": "MSc", "degree_full": "Master of Science", "field": "Big Data and Machine Learning", "school": "ITMO University",
+   "city": "Saint Petersburg", "start": {"year": 2020}, "end": {"year": 2022}},
+  {"degree": "BSc", "degree_full": "Bachelor of Science", "field": "Applied Mathematics and Informatics", "school": "Far Eastern Federal University",
+   "city": "Vladivostok", "start": {"year": 2016}, "end": {"year": 2020}}
+ ],
+ "languages": [{"name": "English", "level": "C1"}, {"name": "Russian", "level": "Native"}],
+ "skills": ["Playwright (TypeScript/JavaScript)", "Patrol (Flutter)", "REST API testing", "PyTest", "Selenium", "Appium", "Python", "Docker", "Kubernetes", "Fintech"],
+ "years": {"skills": {"playwright": 4}},
+ "answers": {
+  "work_authorized": false,
+  "notice_period": "1 month",
+  "available_from": "",
+  "available_text": "",
+  "heard_about": "LinkedIn",
+  "gender": "",
+  "salary": {"monthly": 5500, "annual": 66000, "text": "EUR 5,000-5,500 gross per month, excluding holiday allowance"}
+ },
+ "cv_file": "cv.pdf",
+ "cv_name": "Alex_Example_CV.pdf"
+}

@@ -1,0 +1,29 @@
+# Твои переопределения config.yaml. Лежит в my/config.yaml (не в git). Слияние по ключам; список заменяет
+# список целиком. Всё, чего здесь нет, берётся из config.yaml.
+
+# Доски компаний: свой список, общий отобранный и, по странам, массовые (только если ищешь там):
+#   boards/nl-ind-sponsors.yaml — 432 спонсора IND с вакансиями в Нидерландах
+#   boards/de-large.yaml        — 72 крупных работодателя Германии (DAX/MDAX, концерны на Workday/SuccessFactors)
+company_files:
+  - my/companies.yaml
+  - boards/curated.yaml
+#  - boards/nl-ind-sponsors.yaml
+#  - boards/de-large.yaml
+
+# Агрегаторы: убери лишнее или добавь страновые (iamexpat, undutchables — Нидерланды; arbeitsagentur — Германия)
+# aggregators: [arbeitnow, landingjobs, himalayas, remotive, remoteok, workingnomads, weworkremotely, themuse, jobicy,
+#               adzuna, workable_search]
+
+# LinkedIn: по умолчанию запросы — role.queries, локации — из target. Своё, если нужно иначе:
+# linkedin:
+#   locations:
+#     - {name: Germany, remote: false}
+#     - {name: Berlin, remote: false, max_pages: 30}
+#     - {name: European Union, remote: true, max_pages: 50, queries: [Backend Engineer, Python Developer]}
+
+# telegram:
+#   min_fit: 5              # строже: в Telegram только fit >= 5
+#   quiet_hours: "23:00-08:00"
+
+# llm:
+#   model_cli_country: opus   # вакансии в целевых странах оценивает Opus (их немного, подписка выдержит)

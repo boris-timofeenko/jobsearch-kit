@@ -1,0 +1,51 @@
+role:
+  # Пресет: frontend-разработка.
+  name: "Frontend-разработчик"
+  definition: "разработка веб-интерфейсов: React/Vue/Angular, TypeScript, дизайн-системы, производительность и доступность веба; full-stack с упором на frontend тоже подходит"
+  not_this_role: >
+    чистый backend, нативная мобильная разработка (iOS/Android), QA/тестирование, веб-дизайн без кода,
+    WordPress/верстка лендингов, геймдев, техподдержка, маркетинг
+  strengths: ""
+  small_gap: "другой фреймворк (Vue вместо React), другой стейт-менеджер или сборщик, другой домен"
+
+  queries: [Frontend Engineer, Frontend Developer, React Developer, Senior Frontend Engineer, Software Engineer Frontend,
+            JavaScript Developer, TypeScript Developer, Full Stack Engineer, UI Engineer]
+  keywords: [frontend, front-end, react, javascript, typescript]
+  categories:
+    remotive: software-dev
+    jobicy: frontend
+    weworkremotely: [remote-front-end-programming-jobs, remote-full-stack-programming-jobs]
+    themuse: Software Engineering
+    arbeitsagentur: [Frontend-Entwickler, Webentwickler]
+
+  title_include:
+    - '\b(front[- ]?end|frontend|ui|web|client[- ]side)\b[^,|]{0,20}\b(engineer|developer|dev)\b'
+    - '\b(react|vue(\.?js)?|angular|javascript|typescript|next\.?js|svelte)\b[^,|]{0,20}\b(engineer|developer|dev)\b'
+    - '\b(full[- ]?stack|frontend|front[- ]end)\b'
+    - '\b(frontend|front-end|web|javascript|react)[- ]?entwickler'      # немецкие заголовки
+  title_exclude:
+    - '\b(back[- ]?end only|ios|android|mobile|react native|flutter|qa|tester|test automation|sdet|engineer in test)\b'
+    - '\b(devops|sre|data (engineer|scientist|analyst)|machine learning|embedded|firmware|hardware)\b'
+    - '\b(sales|support|customer|solutions? (engineer|architect)|presales|recruiter|graphic designer|marketing|product manager|account|wordpress|shopify|game|unity|unreal)\b'
+    - '\b(do not apply|test job|testjob)\b'
+  title_boost:
+    '\b(front[- ]?end|frontend|ui engineer)\b': 8
+
+  stack:
+    react: 3
+    typescript: 3
+    'next\.?js': 2
+    'vue|angular|svelte': 1
+    'css|tailwind|styled[- ]components': 1
+    'design system|storybook': 2
+    'accessibility|a11y|wcag': 1
+    'web performance|core web vitals': 1
+    'jest|testing library|playwright|cypress': 1
+    'relocation|visa sponsorship|highly skilled migrant|kennismigrant|blue card': 6
+  focus: []
+  penalties:
+    - name: "похоже на вёрстку лендингов / WordPress"
+      regex: '\b(wordpress|elementor|landing pages?|html email)\b'
+      unless: '\b(react|vue|angular|typescript)\b'
+      score: 15
+  off_domain: {}

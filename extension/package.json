@@ -1,0 +1,15 @@
+{
+  "name": "job-autofill",
+  "private": true,
+  "description": "Browser extension that fills job application forms from the CV profile (see README.md)",
+  "scripts": {
+    "test": "node --test test/*.test.cjs",
+    "lint": "npx --yes web-ext@8 lint",
+    "start": "npx --yes web-ext@8 run --target firefox-desktop",
+    "build": "npx --yes web-ext@8 build --overwrite-dest",
+    "sign": "./sign.sh"
+  },
+  "devDependencies": {
+    "playwright": "1.61.1"
+  }
+}

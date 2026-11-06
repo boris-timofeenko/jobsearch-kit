@@ -1,0 +1,246 @@
+# Доски компаний, опрошенные через публичные API ATS (проверено 02.09.2026).
+# ats: greenhouse | lever | ashby | recruitee | workable | smartrecruiters | workday | teamtailor | personio
+# workday slug = tenant/wdN/SiteName. Новые: `.venv/bin/python -m jobsearch discover "Company"`.
+# Список общий для всех ролей (отбирался как софтверные компании NL/ЕС/remote): в прогон попадают только вакансии,
+# чей заголовок проходит role.title_include, с локацией в целевых странах, ЕС, remote или без локации.
+
+# --- NL продуктовые компании, спонсоры IND
+- {name: Adyen, ats: greenhouse, slug: adyen}
+- {name: bol.com, ats: greenhouse, slug: bolcom}
+- {name: bunq, ats: recruitee, slug: bunq}
+- {name: Catawiki, ats: greenhouse, slug: catawiki}
+- {name: Channable, ats: recruitee, slug: channable}
+- {name: ChannelEngine, ats: recruitee, slug: channelengine}
+- {name: Crisp, ats: ashby, slug: crisp}
+- {name: Da Vinci Derivatives, ats: greenhouse, slug: davinciderivatives}
+- {name: Elsevier, ats: greenhouse, slug: elsevier}
+- {name: Flow Traders, ats: greenhouse, slug: flowtraders}
+- {name: Fourthline, ats: greenhouse, slug: fourthline}
+- {name: Helloprint, ats: recruitee, slug: helloprint}
+- {name: IMC Trading, ats: greenhouse, slug: imc}
+- {name: Kaizo, ats: recruitee, slug: kaizo}
+- {name: Kiefer, ats: ashby, slug: kiefer}
+- {name: Lightspeed, ats: ashby, slug: lightspeed}
+- {name: Mendix, ats: lever, slug: mendix}
+- {name: Miro, ats: ashby, slug: miro}
+- {name: Mollie, ats: ashby, slug: mollie}
+- {name: Bitvavo, ats: ashby, slug: bitvavo}
+- {name: OpenVPN, ats: recruitee, slug: openvpn}
+- {name: Polarsteps, ats: ashby, slug: polarsteps}
+- {name: Schuberg Philis, ats: greenhouse, slug: schubergphilis}
+- {name: Sendcloud, ats: teamtailor, slug: sendcloud}
+- {name: Sensorfact, ats: ashby, slug: sensorfact}
+- {name: Vandebron, ats: recruitee, slug: vandebron}
+- {name: Vivid Money, ats: personio, slug: vivid}          # с Ashby переехали 11.2026
+- {name: Maersk, ats: workday, slug: maersk/wd3/Maersk_Careers}
+
+# --- Международные tech с офисом в Амстердаме (спонсоры IND)
+- {name: Bird, ats: greenhouse, slug: bird}
+- {name: Cloudflare, ats: greenhouse, slug: cloudflare}
+- {name: commercetools, ats: greenhouse, slug: commercetools}
+- {name: Confluent, ats: ashby, slug: confluent}
+- {name: Databricks, ats: greenhouse, slug: databricks}
+- {name: Datadog, ats: greenhouse, slug: datadog}
+- {name: Elastic, ats: greenhouse, slug: elastic}
+- {name: MongoDB, ats: greenhouse, slug: mongodb}
+- {name: Plaid, ats: ashby, slug: plaid}
+- {name: Snowflake, ats: ashby, slug: snowflake}
+- {name: Stripe, ats: greenhouse, slug: stripe}
+- {name: Twilio, ats: greenhouse, slug: twilio}
+
+# --- Fintech / KYC / remote-EU (трек «доход»)
+- {name: Sumsub, ats: teamtailor, slug: sumsub}
+- {name: Binance, ats: lever, slug: binance}
+- {name: Bitpanda, ats: greenhouse, slug: bitpanda}
+- {name: Coinbase, ats: greenhouse, slug: coinbase}
+- {name: ComplyAdvantage, ats: greenhouse, slug: complyadvantage}
+- {name: Crypto.com, ats: lever, slug: crypto}
+- {name: Deliverect, ats: lever, slug: deliverect}
+- {name: Elliptic, ats: ashby, slug: elliptic}
+- {name: Feedzai, ats: greenhouse, slug: feedzai}
+- {name: Forter, ats: greenhouse, slug: forter}
+- {name: GitLab, ats: greenhouse, slug: gitlab}
+- {name: GoCardless, ats: greenhouse, slug: gocardless}
+- {name: IDnow, ats: greenhouse, slug: idnow}
+- {name: Jumio, ats: greenhouse, slug: jumio}
+- {name: Ledger, ats: ashby, slug: ledger}
+- {name: Mirakl, ats: greenhouse, slug: mirakl}
+- {name: N26, ats: greenhouse, slug: n26}
+- {name: Persona, ats: ashby, slug: persona}
+- {name: Pleo, ats: ashby, slug: pleo}
+- {name: Riskified, ats: greenhouse, slug: riskified}
+- {name: Sardine, ats: ashby, slug: sardine}
+- {name: Sift, ats: ashby, slug: sift}
+- {name: Signicat, ats: teamtailor, slug: signicat}
+- {name: TRM Labs, ats: ashby, slug: trm-labs}
+- {name: Veriff, ats: greenhouse, slug: veriff}
+- {name: Wise, ats: greenhouse, slug: wise}
+- {name: Wolt, ats: greenhouse, slug: wolt}
+- {name: Air Apps, ats: ashby, slug: airapps}
+
+# --- Найдено перебором реестра IND (discover --from-ind, 05.09.2026). Софтверные компании с NL-юрлицом.
+- {name: Veeam Software, ats: greenhouse, slug: veeamsoftware}
+- {name: Dept, ats: greenhouse, slug: dept}
+- {name: Grafana Labs, ats: greenhouse, slug: grafanalabs}
+- {name: Cato Networks, ats: greenhouse, slug: catonetworks}
+- {name: Horizon3 AI, ats: ashby, slug: horizon3ai}
+- {name: Valtech, ats: greenhouse, slug: valtech}
+- {name: Smartly.io, ats: greenhouse, slug: smartlyio}
+- {name: Appier, ats: greenhouse, slug: appier}
+- {name: Sentry, ats: ashby, slug: sentry}
+- {name: Verifone, ats: greenhouse, slug: verifone}
+- {name: DataSnipper, ats: ashby, slug: datasnipper}
+- {name: Amplitude, ats: ashby, slug: amplitude}
+- {name: Redwood Software, ats: greenhouse, slug: redwoodsoftware}
+- {name: Mews, ats: greenhouse, slug: mewssystems}
+- {name: ChargePoint, ats: greenhouse, slug: chargepoint}
+- {name: WatchGuard, ats: lever, slug: watchguard}
+- {name: Jamf, ats: greenhouse, slug: jamf}
+- {name: Dataiku, ats: greenhouse, slug: dataiku}
+- {name: MoonPay, ats: lever, slug: moonpay}
+- {name: Leaseweb, ats: teamtailor, slug: leaseweb}
+- {name: Toloka AI, ats: greenhouse, slug: toloka}
+- {name: Check Technologies, ats: ashby, slug: check-technologies}
+- {name: CM.com, ats: recruitee, slug: cmcom}
+- {name: Atabix, ats: ashby, slug: atabix}
+- {name: BlockTech, ats: ashby, slug: blocktech}
+- {name: Xsens, ats: recruitee, slug: xsens}
+- {name: Eventim, ats: recruitee, slug: eventim}
+- {name: Sytac, ats: greenhouse, slug: sytac}
+- {name: Thinkwise, ats: recruitee, slug: thinkwise}
+- {name: MultiSafepay, ats: recruitee, slug: multisafepay}
+- {name: Stream.io, ats: ashby, slug: stream}
+- {name: Publitas, ats: recruitee, slug: publitas}
+- {name: Online Payment Platform, ats: recruitee, slug: onlinepaymentplatform}
+- {name: Luscii, ats: recruitee, slug: luscii}
+- {name: Axelera AI, ats: ashby, slug: axelera}
+- {name: OpenUp, ats: greenhouse, slug: openup}
+- {name: SurePay, ats: greenhouse, slug: surepay}
+- {name: Carv, ats: recruitee, slug: carv}
+- {name: CloudBilling, ats: recruitee, slug: cloudbilling}
+- {name: Payconiq, ats: recruitee, slug: payconiq}
+- {name: WoodWing, ats: recruitee, slug: woodwing}
+- {name: Jama Software, ats: greenhouse, slug: jamasoftware}
+- {name: Digital Matter, ats: lever, slug: digital-matter}
+- {name: hear.com, ats: greenhouse, slug: hearcom}
+- {name: Happeo, ats: recruitee, slug: happeo}
+- {name: Infront, ats: greenhouse, slug: infront}
+- {name: Onramper, ats: recruitee, slug: onramper}
+- {name: Wonderkind, ats: recruitee, slug: wonderkind}
+- {name: Alphacomm, ats: recruitee, slug: alphacomm}
+- {name: Anyone.com, ats: recruitee, slug: anyonecom}
+- {name: Fortaegis, ats: teamtailor, slug: fortaegis}
+- {name: BESTMIX Software, ats: teamtailor, slug: bestmix}
+- {name: Appical, ats: teamtailor, slug: appical}
+- {name: Axians, ats: teamtailor, slug: axians}
+- {name: Novutech, ats: recruitee, slug: novutech}
+- {name: Amsterdam Data Collective, ats: recruitee, slug: amsterdamdatacollective}
+- {name: RAM Infotechnology, ats: recruitee, slug: raminfotechnology}
+- {name: TOPIC Software Development, ats: recruitee, slug: topicsoftwaredevelopment}
+- {name: Digital Survival Company, ats: recruitee, slug: digitalsurvivalcompany}
+- {name: Extreme Networks, ats: lever, slug: extremenetworks}
+- {name: Attendi, ats: recruitee, slug: attendi}
+- {name: Vibes Technology, ats: recruitee, slug: vibes}
+- {name: 50five, ats: recruitee, slug: 50five}
+- {name: BLOXS Software, ats: recruitee, slug: bloxs}
+- {name: Noldus, ats: recruitee, slug: noldus}
+- {name: Iquality, ats: recruitee, slug: iquality}
+- {name: Rockfeather, ats: recruitee, slug: rockfeather}
+- {name: Palantir, ats: lever, slug: palantir}
+# Flutter / Patrol в стеке QA-вакансий (проверено 24.09 по базе и содержимому досок). Picnic — своя платформа
+# jobs.picnic.app без поддерживаемой ATS, приходит через LinkedIn; teamtailor/picnic — финский Picnic, не тот.
+- {name: Funda, ats: recruitee, slug: funda}
+- {name: Creative Clicks, ats: recruitee, slug: creativeclicks}
+- {name: Solflare, ats: smartrecruiters, slug: solflare}      # Zagreb / Belgrade, Patrol в стеке
+
+# --- Найдены 30.10. Работодатели из базы без доски (NL — спонсоры IND, BE/FR/DE — с оценённой вакансией), у которых
+# нашлась доска с QA-историей или софтверной командой; и доски из выдачи hiring.cafe по QA в NL/BE/DE/FR (английский).
+# Отсеяны: производство, фарма, стройка, железо и аэрокосмос, франкоязычные доски, чужие компании с тем же слагом.
+# WhiteBIT убран 06.11: доска на Greenhouse закрыта, новой не нашлось.
+# Flosum убран после первого прогона: 19 QA-ролей — Salesforce-ниша и ручные контракты, по копии на страну, fit 0–1.
+# NL
+- {name: Airwallex, ats: ashby, slug: airwallex}
+- {name: ClickHouse, ats: ashby, slug: clickhouse}
+- {name: Lemonade, ats: ashby, slug: lemonade}
+- {name: Workwize, ats: greenhouse, slug: workwize}
+- {name: HelloFresh, ats: greenhouse, slug: hellofresh}
+- {name: bloomon, ats: lever, slug: bloomon}
+- {name: TOPdesk, ats: smartrecruiters, slug: topdesk}
+- {name: Coolblue, ats: smartrecruiters, slug: coolblue}
+- {name: Harver, ats: smartrecruiters, slug: harver}
+- {name: Lely, ats: smartrecruiters, slug: lely1}
+- {name: Salto CloudWorks, ats: personio, slug: saltocloudworks}
+- {name: 12Build, ats: recruitee, slug: 12build}
+- {name: Shiftbase, ats: recruitee, slug: shiftbase}
+- {name: Sioux Technologies, ats: recruitee, slug: sioux}
+- {name: DPG Media, ats: recruitee, slug: dpgmedia}
+- {name: Nmbrs, ats: teamtailor, slug: nmbrsaccounting}
+- {name: Virtual Vaults, ats: teamtailor, slug: virtualvaults-1747060800}
+# BE
+- {name: OneSpan, ats: greenhouse, slug: onespan}
+- {name: Sofico, ats: greenhouse, slug: soficonv}
+- {name: OMP, ats: greenhouse, slug: ompexternaljobboards}
+- {name: Gorilla, ats: teamtailor, slug: gorilla}         # с Ashby переехали 11.2026
+- {name: Craftzing, ats: recruitee, slug: craftzing}
+- {name: Phished, ats: recruitee, slug: phished}
+- {name: Relu, ats: personio, slug: relu}
+- {name: ILIAS Solutions, ats: personio, slug: ilias-solutions}
+- {name: Optimile, ats: workable, slug: optimile}
+- {name: EPI Company, ats: teamtailor, slug: epicompany}
+# DE
+- {name: JetBrains, ats: greenhouse, slug: jetbrains}
+- {name: Keyfactor, ats: greenhouse, slug: keyfactorinc}
+- {name: IONOS Cloud, ats: greenhouse, slug: ionos2}
+- {name: Gallup, ats: greenhouse, slug: gallup}
+- {name: Zattoo, ats: greenhouse, slug: zattoo}
+- {name: Talon.One, ats: greenhouse, slug: talonone}
+- {name: Almedia, ats: ashby, slug: almedia}
+- {name: JustPlay, ats: ashby, slug: justplay-gmbh}
+- {name: ZEAL Network, ats: ashby, slug: zeal-network}
+- {name: Trading 212, ats: ashby, slug: trading212}
+- {name: NEURA Robotics, ats: ashby, slug: neura-robotics-gmbh}
+- {name: Wayve, ats: ashby, slug: wayve}
+- {name: Linro, ats: ashby, slug: linro}
+- {name: Scalable Capital, ats: smartrecruiters, slug: scalablegmbh}
+- {name: ABOUT YOU, ats: smartrecruiters, slug: aboutyougmbh}
+- {name: Axel Springer, ats: smartrecruiters, slug: axelspringernewsmedianational}
+- {name: Tipico, ats: smartrecruiters, slug: tipico}
+- {name: Kolibri Games, ats: lever, slug: kolibrigames}
+- {name: Resident Advisor, ats: workable, slug: resident-advisor}
+- {name: Animore, ats: workable, slug: animore}
+- {name: exmox, ats: personio, slug: exmox-gmbh}
+- {name: Boardwise, ats: personio, slug: boardwise}
+- {name: MILES Mobility, ats: personio, slug: miles-mobility}
+- {name: Stratosphere Games, ats: personio, slug: stratosphere-games}
+- {name: 1KOMMA5°, ats: personio, slug: 1komma5grad}
+- {name: zvoove, ats: personio, slug: zvoove}
+- {name: AllocNow, ats: personio, slug: allocnow}
+- {name: Contabo, ats: personio, slug: contabo}
+- {name: carbmee, ats: personio, slug: carbmee}
+- {name: WSCAD, ats: personio, slug: wscad}
+- {name: Distribusion, ats: recruitee, slug: distribusion}
+- {name: Stillfront, ats: teamtailor, slug: stillfrontgroup}
+# FR
+- {name: Sonio, ats: ashby, slug: sonio}
+- {name: Shift Technology, ats: greenhouse, slug: shifttechnology}
+- {name: Wireless Logic, ats: greenhouse, slug: wirelesslogic}      # QA в Монпелье (бывш. Matooma)
+- {name: Swapcard, ats: lever, slug: swapcard}
+- {name: Odaseva, ats: lever, slug: odaseva}
+- {name: cozycozy, ats: recruitee, slug: cozycozycareers}
+- {name: A2MAC1, ats: workable, slug: a2mac1}
+- {name: EOS imaging, ats: workable, slug: eos-imaging}
+- {name: European Dynamics, ats: workable, slug: european-dynamics}   # консалтинг для институтов ЕС, тестировщики в Страсбурге/Брюсселе
+- {name: Lefty, ats: teamtailor, slug: theindepedents-1746536688}
+- {name: Sunstice, ats: teamtailor, slug: futurmaster-1727864411}
+- {name: D-EDGE, ats: teamtailor, slug: dedge-1743088149}
+# remote / прочий ЕС
+- {name: Perplexity, ats: ashby, slug: perplexity}
+- {name: Cresta, ats: greenhouse, slug: cresta}
+- {name: Tulip Interfaces, ats: greenhouse, slug: tulip}           # Senior QA Automation в Будапеште
+- {name: Sporty Group, ats: greenhouse, slug: sportygroup}
+- {name: Plata Card, ats: greenhouse, slug: platacard}
+- {name: SplitMetrics, ats: ashby, slug: splitmetrics}
+- {name: GR8 Tech, ats: ashby, slug: gr8-tech}
+- {name: Voodoo, ats: ashby, slug: voodoo}
+- {name: Gameloft, ats: smartrecruiters, slug: gameloft}
+- {name: Frequentis, ats: smartrecruiters, slug: frequentis}      # Test Automation в Клуже
