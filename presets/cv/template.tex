@@ -1,0 +1,30 @@
+% Шаблон для резюме из Markdown (my/cv.md): jobsearch/cv_markdown.py подставляет в него текст.
+% Макросы — те же точки подстройки, что читает «CV под вакансию» (jobsearch/cvgen.py) и автозаполнение
+% (jobsearch/autofill.py): макросы cvheadline, cvlocation, cvworkauth, cvkeywords, раздел SUMMARY, skillrow, role,
+% ctx, окружение duties. Оформление можно менять свободно, имена макросов — нет.
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,top=1.5cm,bottom=1.5cm,left=1.7cm,right=1.7cm]{geometry}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\definecolor{inkc}{HTML}{1F3A5F}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+%%HEAD%%
+\newcommand{\ca}{\ensuremath{\approx}}
+\newcommand{\sep}{\enspace$\cdot$\enspace}
+\newcommand{\dt}[1]{{\small\color{black!70}#1}}
+\newcommand{\cvsection}[1]{\vspace{9pt}{\color{inkc}\bfseries\large #1}\par\vspace{2pt}{\color{inkc!40}\hrule}\vspace{5pt}}
+\newcommand{\skillrow}[2]{\textbf{#1:} #2\par\vspace{1pt}}
+\newcommand{\role}[3]{{\bfseries #1}\sep{}#2\hfill\dt{#3}\par}
+\newcommand{\ctx}[1]{{\small\itshape\color{black!75}#1}\par}
+\newcommand{\nextrole}{\vspace{6pt}}
+\newenvironment{duties}{\begin{itemize}[leftmargin=1.2em,itemsep=1pt,topsep=2pt,parsep=0pt]}{\end{itemize}}
+\hypersetup{pdfkeywords={\cvkeywords}}
+\begin{document}
+%%BODY%%
+\end{document}

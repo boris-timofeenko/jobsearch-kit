@@ -5,3 +5,5 @@ pydantic>=2
 anthropic
 pytest
 pillow
+python-docx>=1.1
+pypdf

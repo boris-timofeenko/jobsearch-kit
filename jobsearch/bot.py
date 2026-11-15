@@ -5,6 +5,7 @@ it under Telegram's 64-byte limit for any source id; `cv:<rowid>` builds a CV ta
 background thread and replies with the PDF. Text commands: /applied, /later, /stats, /mark <id> <status>, /cv <id>.
 """
 import html
+from pathlib import Path
 import json
 import os
 import sqlite3
@@ -66,9 +67,12 @@ def send_document(path, filename, caption="", reply_to=None):
     data = {"chat_id": os.environ["TELEGRAM_CHAT_ID"], "caption": caption, "parse_mode": "HTML"}
     if reply_to:
         data["reply_parameters"] = json.dumps({"message_id": reply_to, "allow_sending_without_reply": True})
+    mime = {".pdf": "application/pdf",
+            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}.get(
+        Path(filename).suffix.lower(), "application/octet-stream")
     with open(path, "rb") as f:
         r = SESSION.post(f"https://api.telegram.org/bot{token}/sendDocument", data=data,
-                         files={"document": (filename, f, "application/pdf")}, timeout=60)
+                         files={"document": (filename, f, mime)}, timeout=60)
     res = r.json()
     if not res.get("ok"):
         LOG(f"telegram sendDocument failed: {res.get('description', '')}")
@@ -93,6 +97,8 @@ def _cv_worker(row, reply_to):
             res = cvgen.build_for_job(row, CFG, log=LOG)
         LOG(f"cv: {res.pdf.name}{' (cache)' if res.cached else ''} <- {row['id']}")
         send_document(res.pdf, res.filename, res.caption, reply_to)
+        for path, filename in res.extra:              # the .docx next to its PDF
+            send_document(path, filename, "", reply_to)
         if res.details:
             send_text(res.details, reply_to)
     except Exception as e:

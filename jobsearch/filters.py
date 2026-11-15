@@ -139,6 +139,16 @@ OFF_DOMAIN_REASON = ""
 LEVEL = 2                  # candidate.seniority: 0 junior, 1 mid, 2 senior, 3 lead
 NEEDS_VISA = True          # candidate.needs_visa: false for EU/EEA citizens — sponsorship wording stops mattering
 BASED_IN = ""              # candidate.based_in: where a remote job may require the candidate to live
+# switches (config.apply_switches → profile["prefs"]); defaults = the behaviour the rules were calibrated with
+LANG_MODE = "skip"         # other_language: skip | flag (a required language is a flag; unreadable text still a skip) | any
+CONTRACT = "penalize"      # contract: skip | penalize (hourly pay and on-site freelance skipped, contract −fit) | ok
+AGENCIES = "penalize"      # agencies: skip | penalize (−15 score, −1 fit) | ok
+OUTSOURCING = "penalize"   # outsourcing: skip | penalize (−1 fit) | ok — the model tells consultancies apart
+PUBLIC_SECTOR = "skip"     # public_sector: skip | ok — clearance, defence, government
+SALARY_MIN = None          # None: visa floor of the country, in target countries only; a number: own minimum everywhere
+REMOTE_OK = True           # goal includes remote
+EU_OFFICES = True          # an office in another EU country is acceptable (the eu track)
+SETTING = "отсев по настройке"   # prefix of skips that come from a switch, not from a rule
 LANG_NAME_RU = {"nl": "нидерландском", "de": "немецком", "fr": "французском"}
 LANG_KEY = {"nl": "dutch", "de": "german", "fr": "french"}
 # target countries: primary first. Each: code, name, regex, floor (salary), sponsor (bool)
@@ -151,6 +161,7 @@ def configure(profile):
     """Rebuild role/target-specific rules from the normalized profile (config.load). Called by cli.load_cfg."""
     global RELEVANT_TITLE, NOT_RELEVANT_TITLE, STACK, NL_LOC, KNOWN_LANGS, COUNTRIES, COUNTRY_CODES, FOCUS, PRIMARY
     global PENALTIES, TITLE_BOOST, OFF_DOMAIN, OFF_DOMAIN_REASON, LEVEL, NEEDS_VISA, BASED_IN
+    global LANG_MODE, CONTRACT, AGENCIES, PUBLIC_SECTOR, SALARY_MIN, REMOTE_OK, EU_OFFICES, OUTSOURCING
     role, target, cand = profile.get("role", {}), profile.get("target", {}), profile.get("candidate", {})
     countries = ([target["primary"]] if target.get("primary") else []) + list(target.get("countries") or [])
     COUNTRIES = [{"code": c["code"], "name": c["name"], "regex": re.compile(c["location_regex"], I),
@@ -182,6 +193,12 @@ def configure(profile):
     LEVEL = {"junior": 0, "mid": 1, "senior": 2, "lead": 3}.get(str(cand.get("seniority") or "senior").lower(), 2)
     NEEDS_VISA = bool(cand.get("needs_visa", True))
     BASED_IN = str(cand.get("based_in") or "")
+    from .config import DEFAULT_PREFS
+    prefs = {**DEFAULT_PREFS, **(profile.get("prefs") or {})}
+    LANG_MODE, CONTRACT, AGENCIES, PUBLIC_SECTOR = (prefs["other_language"], prefs["contract"], prefs["agencies"],
+                                                    prefs["public_sector"])
+    SALARY_MIN, REMOTE_OK, EU_OFFICES = prefs["salary_min"], prefs["remote"], prefs["eu_offices"]
+    OUTSOURCING = prefs["outsourcing"]
 
 
 FR_WORDS = {"le", "la", "les", "des", "une", "un", "et", "vous", "nous", "pour", "avec", "dans", "sur", "est", "sont",
@@ -354,28 +371,38 @@ def analyze(job, sponsors, cfg):
 
     job.lang = detect_lang(job.description) if job.description else detect_lang(job.title)
     knows_nl, knows_de = "dutch" in KNOWN_LANGS, "german" in KNOWN_LANGS
+    unreadable, required = [], []          # posting written in a language the candidate lacks / demanding one
     if job.lang in LANG_KEY and LANG_KEY[job.lang] not in KNOWN_LANGS:
-        skip.append(f"текст на {LANG_NAME_RU[job.lang]}")
+        unreadable.append(f"текст на {LANG_NAME_RU[job.lang]}")
     elif job.lang.startswith("mixed:") and LANG_KEY.get(job.lang[6:]) not in KNOWN_LANGS \
             and not (DUTCH_TITLE.search(job.title) or GERMAN_TITLE.search(job.title)):
         reasons.append(f"объявление двуязычное ({LANG_NAME_RU[job.lang[6:]]} + английский): язык решает LLM")
     elif DUTCH_TITLE.search(job.title) and not knows_nl:
-        skip.append("заголовок на нидерландском")
+        unreadable.append("заголовок на нидерландском")
     elif GERMAN_TITLE.search(job.title) and not knows_de:
-        skip.append("заголовок на немецком")
+        unreadable.append("заголовок на немецком")
     elif NON_EN_TITLE.search(job.title) and not (KNOWN_LANGS - {"english", "russian", "ukrainian", "belarusian"}):
-        skip.append("заголовок не на английском")      # with another European language the model decides
+        unreadable.append("заголовок не на английском")      # with another European language the model decides
     dr = dutch_required(text) if not knows_nl else ""
     if dr:
-        skip.append(f"нужен нидерландский: «{dr}»")
+        required.append(f"нужен нидерландский: «{dr}»")
     ol = other_language_required(job.description)
     if ol:
-        skip.append(f"нужен другой язык: «{ol}»")
+        required.append(f"нужен другой язык: «{ol}»")
+    if LANG_MODE == "skip":
+        skip += unreadable + required
+    elif LANG_MODE == "flag":
+        skip += unreadable
+        reasons += [f"язык: {r}" for r in required]
+    else:
+        reasons += [f"язык: {r}" for r in unreadable + required]
     junior = bool(JUNIOR_TITLE.search(job.title))
     if junior and LEVEL >= 2:
         skip.append("junior/intern уровень")
-    if CLEARANCE.search(text):
+    if CLEARANCE.search(text) and PUBLIC_SECTOR == "skip":
         skip.append("clearance / Defensie / гос")
+    elif CLEARANCE.search(text):
+        reasons.append("госсектор / допуск: проверить")
     if OFF_DOMAIN and ((OFF_DOMAIN["title"] and OFF_DOMAIN["title"].search(job.title))
                        or (OFF_DOMAIN["desc"] and OFF_DOMAIN["desc"].search(job.description))):
         skip.append(OFF_DOMAIN_REASON)
@@ -401,26 +428,37 @@ def analyze(job, sponsors, cfg):
             score_pen += p["score"]
     if FREELANCE.search(job.title) or (FREELANCE.search(job.description) and not re.search(
             r"\b(permanent|full[- ]time employment|employee|vast contract|dienstverband)\b", job.description, I)):
-        if not remote:
+        if CONTRACT == "skip":
+            skip.append(f"{SETTING}: контракт/фриланс")
+        elif not remote and CONTRACT == "penalize":
             skip.append("freelance/contract on-site")
         else:
-            reasons.append("похоже на контракт (remote)")
+            reasons.append("похоже на контракт (remote)" if remote else "похоже на контракт")
 
     job.salary_month = parse_salary(job.salary_text + "\n" + job.description)
-    floor = (country or {}).get("floor") or cfg.get("salary_floor_month") or 0
-    if job.salary_month and in_nl and job.salary_month < floor * 0.9:
-        skip.append(f"зарплата ~€{job.salary_month:.0f}/мес < порога €{floor} ({country['name']})")
-    elif job.salary_month and in_nl and job.salary_month < floor:
+    if SALARY_MIN is None:          # visa floors: per country, only where the candidate would move
+        floor = (country or {}).get("floor") or cfg.get("salary_floor_month") or 0
+        applies, whose = in_nl, (country or {}).get("name", "")
+    else:                           # own minimum: everywhere, 0 = no cut
+        floor, applies, whose = SALARY_MIN, bool(SALARY_MIN), "свой минимум"
+    if job.salary_month and applies and job.salary_month < floor * 0.9:
+        skip.append(f"зарплата ~€{job.salary_month:.0f}/мес < порога €{floor} ({whose})")
+    elif job.salary_month and applies and job.salary_month < floor:
         reasons.append(f"зарплата ~€{job.salary_month:.0f}/мес на грани порога €{floor}: торговаться / индексация")
 
     if AGENCY.search(job.description):
         reasons.append("агентство: конечный клиент не назван")
     emp = (job.extra.get("employment_type") or "")
     rate = pay_rate(f"{job.salary_text}\n{job.description}")
-    if rate:
+    if rate and CONTRACT != "ok":
         skip.append(f"оплата за час/день: «{rate}»")
+    elif rate:
+        reasons.append(f"ставка за час/день: «{rate}»")
     elif HOURLY.search(text) or re.search(r"contract|temporary|interim", emp, I):
-        reasons.append("почасовая/дневная ставка или контракт: релокации обычно не подразумевает")
+        if CONTRACT == "skip":
+            skip.append(f"{SETTING}: почасовая ставка или контракт")
+        else:
+            reasons.append("почасовая/дневная ставка или контракт: релокации обычно не подразумевает")
     if job.applicants is not None:
         reasons.append(f"откликов на LinkedIn: {job.applicants}")
 
@@ -476,7 +514,10 @@ def analyze(job, sponsors, cfg):
             reasons.append(f"фокус: {f['name']}")
             score += f["score"]
     if "агентство" in " ".join(reasons):
-        score -= 15
+        if AGENCIES == "skip":
+            skip.append(f"{SETTING}: агентство/рекрутер")
+        elif AGENCIES == "penalize":
+            score -= 15
     if job.lang == "unknown" and not job.description:
         reasons.append("описание не загружено")
         score -= 5
@@ -517,7 +558,19 @@ def analyze(job, sponsors, cfg):
         job.verdict = "live"
     else:
         job.verdict = "other"
+    out_of_goal(job)
     return job
+
+
+def out_of_goal(job):
+    """A live posting on a track the goal leaves out (remote for relocation only, an office in an unlisted EU country
+    when eu_offices is off) is kept as `other`: stored, never assessed or sent."""
+    why = ("remote, а цель — только переезд" if job.track in ("remote", "remote_nl") and not REMOTE_OK else
+           "офис в другой стране ЕС, а она не в списке стран" if job.track == "eu" and not EU_OFFICES else "")
+    if why and job.verdict == "live":
+        job.verdict = "other"
+        job.reasons.append(why)
+    return bool(why)
 
 
 def relocation_track(track):

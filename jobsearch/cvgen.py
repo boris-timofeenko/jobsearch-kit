@@ -220,7 +220,7 @@ def parse(text):
             macros[name] = (m.end(), _brace_end(text, m.end() - 1))
 
     sentences, summary_span = [], None
-    m = re.search(r"\\cvsection\{SUMMARY\}[^\n]*\n", text)
+    m = re.search(r"^[ \t]*\\cvsection\{SUMMARY\}[^\n]*\n", text, re.M)     # not inside a % comment
     if m:
         pos, start, end = m.end(), None, None
         for line in text[m.end():].split("\n"):
@@ -649,12 +649,13 @@ def report_texts(job, t, plan, kws, before, after, note):
 # ------------------------------------------------------------------ entry point
 @dataclass
 class Result:
-    pdf: Path
+    pdf: Path                       # the file to send first (PDF, or DOCX when no PDF could be made)
     filename: str
     caption: str
     details: str
     plan: dict = field(default_factory=dict)
     cached: bool = False
+    extra: list = field(default_factory=list)      # [(path, filename)] sent after the first one
 
 
 def build_prompt(cv, bank, job):
@@ -689,17 +690,27 @@ def _slug(s, n=30):
 
 
 def build_for_job(job, cfg, backend=None, log=print):
-    """Tailored PDF for one vacancy (`job` is a jobs row as a dict). Cached by CV, bank, vacancy text and model."""
+    """Tailored CV for one vacancy (`job` is a jobs row as a dict) from my/cv.tex, my/cv.md (via the built-in
+    template) or my/cv.docx (in its own design). Cached by CV, bank, vacancy text and model."""
     from . import llm
+    from .config import DATA, cv_source, path_in_project
     ccfg = cfg.get("cv") or {}
-    from .config import path_in_project
-    tex_path, bank_path = path_in_project(ccfg.get("tex", "my/cv.tex")), path_in_project(ccfg.get("bank", "my/cv_bank.yaml"))
-    if not tex_path.exists():
-        raise RuntimeError(f"нет исходника CV {tex_path}: положи LaTeX-резюме в my/cv.tex (на сервер его копирует deploy/deploy.sh)")
+    path, fmt = cv_source(cfg)
+    if fmt == "none":
+        raise RuntimeError("резюме не задано: switches.cv в my/profile.yaml")
+    if fmt == "text":
+        raise RuntimeError(f"{path.name}: из PDF или TXT «CV под вакансию» не собрать. Экспортируй резюме в DOCX "
+                           "(Google Docs: Файл → Скачать → .docx) или перепиши в Markdown по presets/cv/example.md "
+                           "и укажи файл в switches.cv")
+    if fmt == "unknown":
+        raise RuntimeError(f"{path.name}: формат не поддерживается — .docx, .tex или .md")
+    if not path.exists():
+        raise RuntimeError(f"нет файла резюме {path} (на сервер его копирует deploy/deploy.sh вместе с my/)")
+    bank_path = path_in_project(ccfg.get("bank", "my/cv_bank.yaml"))
     desc = job.get("description") or ""
     if len(desc) < 200:
         raise RuntimeError("у вакансии нет текста описания, подгонять не по чему")
-    text = tex_path.read_text()
+    source = path.read_bytes()
     bank_text = bank_path.read_text() if bank_path.exists() else ""
     bank = yaml.safe_load(bank_text) or {}
     if backend is None:
@@ -707,48 +718,87 @@ def build_for_job(job, cfg, backend=None, log=print):
         if not backend:
             raise RuntimeError(f"LLM недоступен: {why}")
     model = ccfg.get("model_cli" if backend.name == "cli" else "model_api")
-    key = hashlib.sha1("\0".join([VERSION, text, bank_text, job.get("id", ""), desc, str(model)]).encode()).hexdigest()[:10]
+    key = hashlib.sha1(b"\0".join([VERSION.encode(), source, bank_text.encode(), job.get("id", "").encode(),
+                                   desc.encode(), str(model).encode()])).hexdigest()[:10]
     name = (cfg.get("profile") or {}).get("candidate", {}).get("name") or "CV"
-    filename = f"{_slug(name, 40)}_CV_{_slug(job.get('company'))}.pdf"
-    from .config import DATA
+    stem = f"{_slug(name, 40)}_CV_{_slug(job.get('company'))}"
     out_dir = DATA / "cv"
     out_dir.mkdir(parents=True, exist_ok=True)
     base = out_dir / f"{_slug(job.get('company'))}-{key}"
-    if base.with_suffix(".pdf").exists() and base.with_suffix(".json").exists():
-        meta = json.loads(base.with_suffix(".json").read_text())
-        return Result(base.with_suffix(".pdf"), filename, meta["caption"], meta["details"], meta.get("plan", {}), True)
-
-    cv = parse(text)
-    log(f"cv: asking {backend.name}/{model} for {job.get('company')} — {job.get('title')}")
-    plan = backend.ask(SYSTEM.replace("{max_edits}", str(ccfg.get("max_edits", 5))), build_prompt(cv, bank, job),
-                       CvPlan, model=model)
-    t = apply_plan(cv, bank, plan, ccfg.get("max_edits", 5), vacancy_text=f"{job.get('title')} {desc}")
+    meta_path = base.with_suffix(".json")
+    if meta_path.exists():
+        meta = json.loads(meta_path.read_text())
+        files = [(out_dir / f, n) for f, n in meta.get("files") or [[base.name + ".pdf", stem + ".pdf"]]]
+        if all(f.exists() for f, _ in files):
+            return Result(files[0][0], files[0][1], meta["caption"], meta["details"], meta.get("plan", {}), True,
+                          files[1:])
 
     track = job.get("track") or ""
-    t = (cfg.get("profile") or {}).get("target", {})
-    country = next((c["name"] for c in ([t["primary"]] if t.get("primary") else []) + list(t.get("countries") or [])
-                    if c.get("code") == track), None)
+    target = (cfg.get("profile") or {}).get("target", {})
+    country = next((c["name"] for c in ([target["primary"]] if target.get("primary") else [])
+                    + list(target.get("countries") or []) if c.get("code") == track), None)
     location, workauth, note = relocation_lines(bank, track, job.get("location"), country)
+    max_edits, max_pages = ccfg.get("max_edits", 5), int(ccfg.get("max_pages", 2))
 
-    kws = list(dict.fromkeys(k.strip() for k in plan.vacancy_keywords if k.strip()))[:20]
-    original_plain = plain_text(text, " ".join(to_plain(cv.macro(m)) for m in MACROS[:3]))
-    before = {k: has_keyword(k, original_plain) for k in kws}
-    max_pages = int(ccfg.get("max_pages", 2))
-    with tempfile.TemporaryDirectory() as tmp:
-        for _ in range(12):
-            draft = render(cv, t, location, workauth)
-            body = plain_text(draft, f"{t.headline} {location or ''} {workauth or ''}")
-            base_kw = [k.strip() for k in to_plain(cv.macro("cvkeywords")).split(",") if k.strip()]
-            extra_kw = [k for k in kws if has_keyword(k, body) and norm(k) not in {norm(x) for x in base_kw}
-                        and not MARKUP.search(k)]
-            final = render(cv, t, location, workauth, ", ".join(base_kw + extra_kw) or None)
-            pdf, pages = compile_pdf(final, tmp)
-            if pages <= max_pages or not trim_one(cv, t):
-                break
-        after = {k: has_keyword(k, body) for k in kws}
-        shutil.copy(pdf, base.with_suffix(".pdf"))
-        base.with_suffix(".tex").write_text(final)
+    if fmt == "docx":
+        from . import cv_docx
+        cv = cv_docx.parse(path, bank)
+        plan, t = _ask_plan(cv, bank, job, backend, model, max_edits, log)
+        kws = list(dict.fromkeys(k.strip() for k in plan.vacancy_keywords if k.strip()))[:20]
+        before = {k: has_keyword(k, cv_docx.plain(cv)) for k in kws}
+        docx_out, pdf_out, pages = base.with_suffix(".docx"), None, None
+        with tempfile.TemporaryDirectory() as tmp:
+            for _ in range(12):
+                body_kw = [k for k in kws if not MARKUP.search(k)]
+                out = cv_docx.render(path, cv, t, location, workauth, ", ".join(body_kw) or None)
+                out.doc.save(docx_out)
+                pdf, pages = cv_docx.to_pdf(docx_out, tmp)
+                if not pdf or pages <= max_pages or not trim_one(cv, t):
+                    break
+            after = {k: has_keyword(k, cv_docx.plain(out.doc)) for k in kws}
+            if pdf:
+                pdf_out = base.with_suffix(".pdf")
+                shutil.copy(pdf, pdf_out)
+        t.rejected += out.declined
+        declined = tuple(w for w, _ in out.declined)
+        t.edits = [e for e in t.edits if not e[0].startswith(declined)]       # "summary s2" was declined as "summary"
+        files = ([(pdf_out, stem + ".pdf")] if pdf_out else []) + [(docx_out, stem + ".docx")]
+        if not pdf_out:
+            note += " · PDF не собран: нет LibreOffice, присылаю DOCX"
+    else:
+        if fmt == "markdown":
+            from . import cv_markdown
+            text = cv_markdown.load(path)
+        else:
+            text = source.decode("utf-8")
+        cv = parse(text)
+        plan, t = _ask_plan(cv, bank, job, backend, model, max_edits, log)
+        kws = list(dict.fromkeys(k.strip() for k in plan.vacancy_keywords if k.strip()))[:20]
+        original_plain = plain_text(text, " ".join(to_plain(cv.macro(m)) for m in MACROS[:3]))
+        before = {k: has_keyword(k, original_plain) for k in kws}
+        with tempfile.TemporaryDirectory() as tmp:
+            for _ in range(12):
+                draft = render(cv, t, location, workauth)
+                body = plain_text(draft, f"{t.headline} {location or ''} {workauth or ''}")
+                base_kw = [k.strip() for k in to_plain(cv.macro("cvkeywords")).split(",") if k.strip()]
+                extra_kw = [k for k in kws if has_keyword(k, body) and norm(k) not in {norm(x) for x in base_kw}
+                            and not MARKUP.search(k)]
+                final = render(cv, t, location, workauth, ", ".join(base_kw + extra_kw) or None)
+                pdf, pages = compile_pdf(final, tmp)
+                if pages <= max_pages or not trim_one(cv, t):
+                    break
+            after = {k: has_keyword(k, body) for k in kws}
+            shutil.copy(pdf, base.with_suffix(".pdf"))
+            base.with_suffix(".tex").write_text(final)
+        files = [(base.with_suffix(".pdf"), stem + ".pdf")]
     caption, details = report_texts(job, t, plan, kws, before, after, note)
-    base.with_suffix(".json").write_text(json.dumps({"caption": caption, "details": details, "pages": pages,
-                                                     "plan": plan.model_dump()}, ensure_ascii=False, indent=1))
-    return Result(base.with_suffix(".pdf"), filename, caption, details, plan.model_dump())
+    meta_path.write_text(json.dumps({"caption": caption, "details": details, "pages": pages, "plan": plan.model_dump(),
+                                     "files": [[f.name, n] for f, n in files]}, ensure_ascii=False, indent=1))
+    return Result(files[0][0], files[0][1], caption, details, plan.model_dump(), False, files[1:])
+
+
+def _ask_plan(cv, bank, job, backend, model, max_edits, log):
+    log(f"cv: asking {backend.name}/{model} for {job.get('company')} — {job.get('title')}")
+    plan = backend.ask(SYSTEM.replace("{max_edits}", str(max_edits)), build_prompt(cv, bank, job), CvPlan, model=model)
+    desc = job.get("description") or ""
+    return plan, apply_plan(cv, bank, plan, max_edits, vacancy_text=f"{job.get('title')} {desc}")

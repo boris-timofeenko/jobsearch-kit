@@ -42,10 +42,13 @@ jobsearch/
   bot.py          long-polling бот: кнопки статусов, команды, «CV под вакансию»
   cvgen.py        CV под вакансию: разбор tex, план модели (CvPlan), проверка правок, pdflatex
   discover.py     поиск ATS-доски компании по вариантам слага; массовый перебор с проверкой локации
-  autofill.py     profile.json для браузерного расширения автозаполнения
-presets/          roles/*.yaml (пресеты ролей), countries.yaml (каталог стран), примеры для `init`
+  autofill.py     profile.json для браузерного расширения автозаполнения (tex, md, docx)
+  cv_docx.py      резюме в DOCX: разбор по разделам, запись правок в документ, PDF через LibreOffice
+  cv_markdown.py  резюме в Markdown → tex по presets/cv/template.tex
+  wizard.py       вопросы `init` в терминале → блок switches
+presets/          roles/*.yaml (пресеты ролей), countries.yaml (каталог стран), cv/ (шаблон и пример Markdown), примеры для `init`
 boards/           общие списки досок: curated (отобранные), nl-ind-sponsors, de-large
-my/               (не в git) profile.yaml, config.yaml, companies.yaml, cv.tex, cv_bank.yaml
+my/               (не в git) profile.yaml, config.yaml, companies.yaml, cv.docx|tex|md, cv_bank.yaml
 data/             (не в git) jobs.db, sponsors.json, reports/, logs/, runs.log, .run.lock, .run.state
 deploy/           deploy.sh (rsync + install), install-server.sh, run-server.sh, systemd-юниты
 scripts/          run-local.sh, install_launchd.sh (Mac), package-skill.sh (архив скилла для claude.ai)
@@ -68,6 +71,19 @@ tests/            pytest; fixtures/my — QA-профиль, на котором
 `llm`, `report`, `ats`, `aggregators`: модули держат правила в глобальных переменных и пересобирают их из профиля.
 
 `JOBSEARCH_MY` / `JOBSEARCH_DATA` переносят `my/` и `data/` (тесты используют `tests/fixtures/my` и временную папку).
+
+**Переключатели.** `switches` в начале профиля — короткие ответы (`config.SWITCH_VALUES`); `config.apply_switches`
+раскладывает их в `candidate`, `target`, `target.fit_adjustments` и `profile["prefs"]` до нормализации стран.
+Переключатель главнее такого же поля ниже, расхождение попадает в `profile["_notes"]` и печатается `check`; неверное
+значение — в `_problems`. Без блока действуют `config.DEFAULT_PREFS` — поведение, на котором калибровались правила
+(регрессия 15.11 на снимке боевой базы, 34 678 вакансий: профиль без `switches` даёт тот же результат, что опубликованная версия, до строки; `other_language: flag` + `contract: ok` на тех же данных открывают 1 428 отсеянных, из них с fit модели ≥ 4 — 98).
+`filters.configure` держит переключатели в `LANG_MODE`, `CONTRACT`, `AGENCIES`, `OUTSOURCING`, `PUBLIC_SECTOR`,
+`SALARY_MIN`, `REMOTE_OK`, `EU_OFFICES`; `llm.apply_assessment` читает их оттуда. Отсев по переключателю подписан
+`filters.SETTING` («отсев по настройке: …»), пометка вместо отсева начинается не со слова из `llm.SKIP_PREFIXES`
+(«язык: нужен …», «ставка …»), иначе `rescuable` приняла бы её за отсев. Трек, который цель исключает (remote при
+`goal: relocate`, `eu` при `eu_offices: false`), даёт `verdict=other` (`filters.out_of_goal`): вакансия хранится, но
+не оценивается и не отправляется; после модели проверка повторяется, потому что модель может перевести remote в `eu`.
+`init` в терминале (`wizard.py`) задаёт переключатели вопросами и пишет ответы в блок, сохраняя комментарии.
 
 Роль целиком в `role`: `name`/`definition`/`not_this_role`/`strengths`/`small_gap` — текст рубрики;
 `queries`/`keywords`/`categories` — поиск; `title_include`/`title_exclude` — фильтр заголовков;
@@ -215,16 +231,32 @@ Telegram: первым сообщением сводка прогона (соб�
 момент до перезапуска). «CV под вакансию» собирается в фоновом потоке, по одному за раз. Юниту бота нужен
 `~/.local/bin` в PATH для `claude`.
 
-## CV под вакансию (`cvgen.py`)
+## CV под вакансию (`cvgen.py`, `cv_docx.py`, `cv_markdown.py`)
 
-Источники — `my/cv.tex` и `my/cv_bank.yaml`. Точки подстройки в tex: макросы `\cvheadline`, `\cvlocation`,
-`\cvworkauth`, `\cvkeywords`, абзац после `\cvsection{SUMMARY}`, строки `\skillrow{…}{…}`, `\item` внутри `duties`;
-`% cv:pin` — буллет не скрывается. Модель (по умолчанию Opus) возвращает `CvPlan`, `apply_plan` применяет и
-отбрасывает лишнее: заголовок только из `headlines`, s1 всегда первым, навыки только переставляются и добавляются
-из `skills.extra`, если вакансия их упоминает, правки текста (`check_edit`) — без новых цифр и чужих слов, похожесть
-≥ 0.75 после сведения синонимов. Строки «Located in» / «Work authorisation» по треку (`relocation.<track>` в банке).
-pdflatex во временной папке, лишние страницы — `trim_one`. Кэш `data/cv/`, при смене логики поднять `VERSION`.
-Формат банка — по тестам `tests/test_cvgen.py` (`BANK`).
+Резюме — `switches.cv` (иначе `cv.source` / `cv.tex` в конфиге), формат по расширению (`config.cv_source`):
+- `.tex` — как есть. Точки подстройки: макросы `\cvheadline`, `\cvlocation`, `\cvworkauth`, `\cvkeywords`, абзац
+  после `\cvsection{SUMMARY}` (с начала строки, не в комментарии), строки `\skillrow{…}{…}`, `\item` внутри
+  `duties`; `% cv:pin` — буллет не скрывается.
+- `.md` — `cv_markdown.convert` переводит в tex по `presets/cv/template.tex` (те же макросы), дальше путь `.tex`.
+  Формат — `presets/cv/example.md`; `<!-- pin -->` = `% cv:pin`. Автозаполнение тоже работает через этот tex.
+- `.docx` — `cv_docx.parse` раскладывает документ в ту же `cvgen.Cv` (заголовок = абзац, равный одному из
+  `headlines` банка; summary, навыки «Метка: a, b», роли = буллеты после строк-заголовков в разделе Experience;
+  разделы ищутся по заголовкам, другие названия — `cv_bank.docx`). Модель получает тот же промпт, `apply_plan` —
+  те же проверки. `cv_docx.render` пишет в документ только изменённое: буллеты двигаются и удаляются целыми
+  абзацами (стиль и нумерация остаются), новый текст идёт в run, где он начинался, если хвост абзаца в одном
+  форматировании; иначе (жирное слово, ссылка, поле) правка отклоняется и попадает в отчёт. Нетронутые абзацы не
+  переписываются. PDF — LibreOffice (`cv_docx.to_pdf`, свой профиль на вызов), без него присылается DOCX; лимит
+  страниц проверяется только при PDF. `cv --inspect` печатает, что нашлось.
+- `.pdf`, `.txt` — только текст для профиля; кнопка объясняет, как получить DOCX или Markdown.
+
+Модель (по умолчанию Opus) возвращает `CvPlan`, `apply_plan` применяет и отбрасывает лишнее: заголовок только из
+`headlines`, s1 всегда первым, навыки только переставляются и добавляются из `skills.extra`, если вакансия их
+упоминает, правки текста (`check_edit`) — без новых цифр и чужих слов, похожесть ≥ 0.75 после сведения синонимов.
+Строки «Located in» / «Work authorisation» по треку (`relocation.<track>` в банке; в DOCX — абзацы, равные
+`relocation.default`). Кэш `data/cv/<компания>-<хэш>.json` со списком файлов, хэш от `VERSION`, байтов резюме, банка,
+текста вакансии и модели; при смене логики поднять `VERSION`. Формат банка — по тестам `tests/test_cvgen.py`
+(`BANK`) и `tests/test_cv_docx.py`. До 15.11 в `build_for_job` трек вакансии затирал подстроенное резюме (`t`), и
+кнопка падала на первом клике: сквозной тест `tests/test_cv_build.py` с подставной моделью ловит такое.
 
 ## hiring.cafe
 
@@ -239,7 +271,7 @@ pdflatex во временной папке, лишние страницы — `
 
 `deploy/deploy.sh root@<ip>` — rsync проекта (с `my/` и `.env`, без `data/` и `.venv`) в `/opt/jobsearch`, затем
 `install-server.sh`: пакеты, пользователь `jobsearch`, venv, тесты, Claude CLI (если `CLAUDE_CODE_OAUTH_TOKEN` и нет
-API-ключа), LaTeX (если есть `my/cv.tex`), Chrome (если `HC_CHROME=on`), systemd с часовым поясом из `JOBSEARCH_TZ`.
+API-ключа), LaTeX (резюме .tex/.md) или LibreOffice (резюме .docx), Chrome (если `HC_CHROME=on`), systemd с часовым поясом из `JOBSEARCH_TZ`.
 `run-server.sh fast|deep`: flock на `data/.run.lock`, fast = `--time-filter r14400 --notify` (в 08 — `r36000`),
 deep = `--deep --time-filter r43200 --notify`; `timeout` 3 ч / 7,5 ч, код 124 приходит в Telegram. Пропуск из-за
 занятого lock — одно сообщение на долгий прогон. Таймеры: fast 08,10,…,22:15, deep 00:15, `Persistent=true`. При

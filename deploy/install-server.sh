@@ -1,8 +1,8 @@
 #!/bin/bash
 # Установка на VPS (Debian 12 / Ubuntu 22.04+), запускается deploy/deploy.sh от root. Идемпотентно.
 # Пользователь jobsearch, venv, зависимости, тесты, systemd: прогоны по таймеру и Telegram-бот.
-# Дополнительно и только когда нужно: LaTeX (если есть my/cv.tex), Claude CLI (если в .env подписочный токен),
-# Chrome под Xvfb для резервного транспорта hiring.cafe (если в .env HC_CHROME=on).
+# Дополнительно и только когда нужно: LaTeX (резюме .tex или .md), LibreOffice (резюме .docx — для PDF), Claude CLI
+# (если в .env подписочный токен), Chrome под Xvfb для резервного транспорта hiring.cafe (если в .env HC_CHROME=on).
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 APP=/opt/jobsearch
@@ -12,10 +12,20 @@ envval() { grep -E "^$1=" .env 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '"' 
 echo "  пакеты"
 apt-get update -qq
 apt-get install -y -qq python3 python3-venv python3-pip rsync curl sqlite3 >/dev/null
-if [ -f my/cv.tex ]; then
+CV=$(grep -E '^[[:space:]]+cv:' my/profile.yaml 2>/dev/null | head -1 | sed -E 's/^[[:space:]]+cv:[[:space:]]*([^ #]+).*/\1/')
+[ -n "$CV" ] || { [ -f my/cv.tex ] && CV=my/cv.tex; }
+case "$CV" in
+  *.tex|*.md|*.markdown) NEED_TEX=1 ;;
+  *.docx) NEED_LO=1 ;;
+esac
+if [ -n "${NEED_TEX:-}" ]; then
   echo "  LaTeX для «CV под вакансию» (~1 ГБ, только первый раз)"
   apt-get install -y -qq --no-install-recommends texlive-latex-base texlive-latex-recommended texlive-latex-extra \
     texlive-fonts-recommended texlive-fonts-extra texlive-lang-cyrillic >/dev/null
+fi
+if [ -n "${NEED_LO:-}" ]; then
+  echo "  LibreOffice Writer: PDF из DOCX-резюме (~400 МБ, только первый раз)"
+  apt-get install -y -qq --no-install-recommends libreoffice-writer fonts-liberation fonts-dejavu >/dev/null
 fi
 if [ "$(envval HC_CHROME)" = "on" ]; then
   echo "  Chrome + Xvfb для hiring.cafe"

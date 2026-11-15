@@ -83,9 +83,10 @@ SYSTEM = PROFILE + "\n\n" + TAIL
 KNOWN_LANGS = {"english", "russian"}
 LOCATION_PENALTY = {"nl": -1, "eu": 2, "remote_nl": 2, "remote": 3, "other": 3}
 # AI bonuses are 0 unless the profile sets them (target.fit_adjustments): how much AI in the role matters is personal
-FIT_ADJ = {"sponsorship_yes": 2, "relocation_yes": 1, "ai_first": 0, "ai_product": 0, "ai_tooling": 0, "agency": -1,
-           "consultancy": -1, "contractor": -2, "low_competition": 1, "low_competition_max": 25, "high_competition": -1,
-           "high_competition_min": 150}
+FIT_ADJ_DEFAULT = {"sponsorship_yes": 2, "relocation_yes": 1, "ai_first": 0, "ai_product": 0, "ai_tooling": 0,
+                   "agency": -1, "consultancy": -1, "contractor": -2, "low_competition": 1, "low_competition_max": 25,
+                   "high_competition": -1, "high_competition_min": 150}
+FIT_ADJ = dict(FIT_ADJ_DEFAULT)
 LEGACY_FIT_KEYS = {"ai_qa_first": "ai_first", "ai_qa_product": "ai_product", "ai_qa_tooling": "ai_tooling",
                    "hourly_contract": "contractor"}
 CONTRACT_FLAGS = ("почасовая", "похоже на контракт")   # heuristic reasons from filters: contract/B2B/freelance wording
@@ -177,7 +178,7 @@ def configure(profile):
     if "primary" in t:
         LOCATION_PENALTY = {**default_location_penalty(t), **{k: int(v) for k, v in (t.get("location_penalty") or {}).items()}}
     adj = {LEGACY_FIT_KEYS.get(k, k): int(v) for k, v in (t.get("fit_adjustments") or {}).items()}
-    FIT_ADJ = {**FIT_ADJ, **adj}
+    FIT_ADJ = {**FIT_ADJ_DEFAULT, **adj}               # from the defaults: nothing leaks from a previous profile
     GOAL_NOTE = (t.get("goal_note") or "").strip()
     FOCUS_FIT = {f["name"]: int(f.get("fit", 0)) for f in r.get("focus") or []}
     if c.get("languages"):
@@ -491,7 +492,7 @@ def pick_backend(cfg):
 
 
 # ------------------------------------------------------------------ pipeline glue
-SKIP_PREFIXES = ("текст на", "заголовок", "нужен", "junior/intern", "clearance", "без спонсорства",
+SKIP_PREFIXES = ("текст на", "заголовок", "нужен", "junior/intern", "clearance", "без спонсорства", "отсев по настройке",
                  "freelance/contract on-site", "компания в exclude", "LLM: не та роль", "LLM: ограничение",
                  "LLM: нужен язык", "LLM: junior", "LLM: спонсорство явно", "оплата за час/день", "LLM: оплата",
                  "компания без fit")
@@ -536,8 +537,10 @@ def apply_assessment(job, a: Assessment):
         skip.append(f"LLM: ограничение по резидентству — «{a.residency_restriction[:90]}»")
     gap = language_gap(a.language_requirement)
     flags = []
-    if gap:
+    if gap and _f.LANG_MODE == "skip":
         skip.append(f"LLM: нужен язык — {gap[:60]}")
+    elif gap:
+        flags.append(f"LLM: язык — нужен {gap[:60]}")
     elif a.language_requirement:
         flags.append(f"LLM: язык есть у кандидата — {a.language_requirement[:60]}")
     flags += soft_residency
@@ -546,8 +549,11 @@ def apply_assessment(job, a: Assessment):
         skip.append("LLM: junior")
     elif level is not None and level < own:
         flags.append(f"LLM: {a.seniority}-level")
-    if a.pay_basis in ("hourly", "daily"):
-        skip.append("LLM: оплата " + ("почасовая" if a.pay_basis == "hourly" else "подневная"))
+    pay = "почасовая" if a.pay_basis == "hourly" else "подневная"
+    if a.pay_basis in ("hourly", "daily") and _f.CONTRACT != "ok":
+        skip.append(f"LLM: оплата {pay}")
+    elif a.pay_basis in ("hourly", "daily"):
+        flags.append(f"LLM: ставка {pay}")
     if NEEDS_VISA and a.sponsorship == "no" and (job.track in _f.COUNTRY_CODES or job.track == "eu"):
         skip.append("LLM: спонсорство явно не предлагается")   # on-site in the EU without a visa is not reachable
     if a.verdict == "skip" and not skip:
@@ -599,12 +605,19 @@ def apply_assessment(job, a: Assessment):
     etype = a.employer_type
     if etype == "unknown" and a.is_agency:
         etype = "recruiter" if heuristic_recruiter else "consultancy"          # legacy assessments without the field
-    if (etype == "recruiter" or (etype == "unknown" and heuristic_recruiter)) and FIT_ADJ["agency"]:
+    recruiter = etype == "recruiter" or (etype == "unknown" and heuristic_recruiter)
+    if recruiter and _f.AGENCIES == "skip":
+        skip.append(f"{_f.SETTING}: рекрутер/посредник")
+    elif recruiter and FIT_ADJ["agency"]:
         adj.append((FIT_ADJ["agency"], "рекрутер/посредник"))
+    elif etype == "consultancy" and _f.OUTSOURCING == "skip":
+        skip.append(f"{_f.SETTING}: аутсорс/аутстафф")
     elif etype == "consultancy" and FIT_ADJ["consultancy"]:
         adj.append((FIT_ADJ["consultancy"], "аутсорс/аутстафф"))
     contract = a.employment == "contractor" or any(r.startswith(CONTRACT_FLAGS) for r in job.reasons)
-    if contract and visa:
+    if contract and _f.CONTRACT == "skip" and not visa:
+        skip.append(f"{_f.SETTING}: контракт, не найм")
+    elif contract and visa:
         flags.append("контракт, но виза обещана явно: без штрафа")
     elif contract and FIT_ADJ["contractor"]:
         adj.append((FIT_ADJ["contractor"], "контракт, не найм"))
@@ -624,6 +637,7 @@ def apply_assessment(job, a: Assessment):
         job.verdict = "other"
     else:
         job.score = max(0, round(0.4 * job.score + 6 * job.llm_fit))   # uncapped too, so the order at the top holds
+        _f.out_of_goal(job)                    # the model may have moved it to a track the goal leaves out
     return job
 
 

@@ -116,9 +116,60 @@ def parse_cv(text):
     return out
 
 
-def build(text, bank, candidate_name="", today=None):
-    """profile.json content for the extension (schema: extension/profile.example.json)."""
-    cv = parse_cv(text)
+LINK = re.compile(r"(?:https?://)?(?:www\.)?((?:linkedin\.com|github\.com|t\.me|telegram\.me)/[\w./-]+)", re.I)
+PHONE = re.compile(r"\+\d[\d\s()-]{7,}\d")
+EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+
+
+def parse_docx(path, bank=None):
+    """The same fields as parse_cv from a .docx: contacts by pattern from the whole text, summary, skills and roles
+    from cv_docx; a role header "Title — Company" or "Title | Company | Jan 2022 – Present" is split, dates parsed.
+    Education stays empty: there is no common shape for it in Word CVs."""
+    from . import cv_docx
+    cv = cv_docx.parse(path, bank or {})
+    lines = [x.strip() for x in cv.full_text.split("\n") if x.strip()]
+    out = {"name": lines[0] if lines else "", "headline": cv.headline or (lines[1] if len(lines) > 1 else "")}
+    m = PHONE.search(cv.full_text)
+    if m:
+        shown = re.sub(r"\s+", " ", m.group(0)).strip()
+        code = shown.split()[0] if " " in shown else ""
+        out["phone"] = {"e164": re.sub(r"[^\d+]", "", shown), "international": shown, "country_code": code,
+                        "national": shown[len(code):].strip()}
+    m = EMAIL.search(cv.full_text)
+    out["email"] = m.group(0) if m else ""
+    for host in LINK.findall(cv.full_text):
+        host = host.rstrip("/.")
+        key = "linkedin" if host.lower().startswith("linkedin") else "github" if host.lower().startswith("github") \
+            else "telegram"
+        out.setdefault(key, ("https://www." if key == "linkedin" else "https://") + host)
+    m = re.search(r"\b(?:located|based|living)\s+in\s+([^.\n]+)", cv.full_text, re.I)
+    out["location"] = m.group(1).strip() if m else ""
+    out["summary"] = " ".join(cv.sentences)
+    out["skills"] = [i for row in cv.skills for i in row.items]
+    m = re.search(r"^\s*(?:languages|языки)\s*\n(.+)$", cv.full_text, re.I | re.M)
+    langs = []
+    for part in re.split(r"\s*[·|•;,]\s*", m.group(1)) if m else []:
+        name, _, level = part.partition(":")
+        if name.strip():
+            langs.append({"name": name.strip(), "level": level.strip()})
+    out["languages"] = langs
+    exp = []
+    for r in cv.roles:
+        parts = [x.strip() for x in re.split(r"\s+[—–|@]\s+|\s+at\s+", r.title) if x.strip()]
+        dates = r.dates or next((x for x in parts[2:] if re.search(r"\d{4}", x)), "")
+        start, end = split_dates(dates) if dates else (None, None)
+        exp.append({"title": parts[0] if parts else r.title, "title_history": parts[:1], "company": parts[1] if len(parts) > 1 else "",
+                    "location": "", "remote": False, "start": start, "end": end, "current": bool(start) and end is None,
+                    "description": "\n".join("- " + b.tex for b in r.bullets)})
+    out["experience"] = exp
+    out["education"] = []
+    return out
+
+
+def build(text, bank, candidate_name="", today=None, parsed=None):
+    """profile.json content for the extension (schema: extension/profile.example.json). `parsed`: fields already
+    read from a non-LaTeX CV (parse_docx) instead of the tex `text`."""
+    cv = parsed if parsed is not None else parse_cv(text)
     af = (bank or {}).get("autofill") or {}
     extra = [s for items in ((bank or {}).get("skills") or {}).get("extra", {}).values() for s in items]
     name = cv["name"] or candidate_name

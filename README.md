@@ -41,10 +41,35 @@ claude
 На Mac клонируй в `~/jobsearch`, а не в `~/Documents`, `~/Desktop` или `~/Downloads`: из этих папок macOS не даёт
 запускать задачи по расписанию.
 
-Без Claude Code всё то же делается руками по [docs/SETUP.md](docs/SETUP.md), около часа. Если терминала нет
+Без Claude Code: `python -m jobsearch init` спросит роль и переключатели прямо в терминале, остальное — по
+[docs/SETUP.md](docs/SETUP.md), около часа. Если терминала нет
 совсем, скилл можно загрузить в приложение Claude (Settings → Capabilities → Skills): `scripts/package-skill.sh`
 соберёт `dist/jobsearch-setup.zip`. Там он по резюме подготовит `my/profile.yaml` и `my/config.yaml`, а команды
 придётся выполнить самому.
+
+## Переключатели
+
+Главное настраивается короткими ответами в начале `my/profile.yaml`:
+
+```yaml
+switches:
+  goal: both                    # relocate — только переезд · remote — только удалёнка · both
+  countries: [de, nl]           # страны переезда, первая — основная
+  eu_offices: true              # офис в другой стране ЕС тоже рассматриваю
+  visa: needed                  # not_needed — есть гражданство или ВНЖ ЕС
+  languages: [English, Russian]
+  other_language: skip          # вакансия требует другой язык: skip · flag (показать с пометкой) · any
+  level: senior
+  salary_min: visa              # порог визы страны · свой минимум €/мес · 0
+  contract: penalize            # B2B и фриланс: skip · penalize · ok
+  outsourcing: penalize         # аутсорс и аутстафф: skip · penalize · ok
+  agencies: penalize            # рекрутеры: skip · penalize · ok
+  cv: my/cv.docx                # .docx или .tex — «CV под вакансию» в том же оформлении, .md — через шаблон
+```
+
+Полный список и что меняет каждый — [docs/CONFIG.md](docs/CONFIG.md#переключатели-switches). Резюме подходит в Word
+(Google Docs экспортирует .docx), LaTeX или Markdown: кнопка «CV под вакансию» вернёт его же, переставив буллеты
+и навыки под вакансию.
 
 ## Что понадобится
 
@@ -81,7 +106,7 @@ LinkedIn ─┐
 | `my/profile.yaml` | ты: резюме для модели, роль, страны, воронка | нет |
 | `my/config.yaml` | твои переопределения `config.yaml`: доски, агрегаторы, LinkedIn, лимиты | нет |
 | `my/companies.yaml` | свои компании | нет |
-| `my/cv.tex`, `my/cv_bank.yaml` | резюме в LaTeX для кнопки «CV под вакансию» (по желанию) | нет |
+| `my/cv.docx` / `.tex` / `.md`, `my/cv_bank.yaml` | резюме для кнопки «CV под вакансию» (по желанию) | нет |
 | `.env` | токены Telegram и Claude | нет |
 | `data/` | база, отчёты, логи | нет |
 | `presets/` | пресеты ролей, каталог стран, примеры | да |

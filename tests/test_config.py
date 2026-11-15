@@ -19,14 +19,17 @@ def restore_fixture_profile():
 
 
 def profile(role="backend", **cand_target):
-    """The example profile with a role preset, overrides as candidate__x / target__x keyword arguments."""
+    """The example profile with a role preset in the detailed form (no switches: that path is in test_switches.py),
+    overrides as candidate__x / target__x keyword arguments."""
     p = yaml.safe_load((ROOT / "presets" / "profile.example.yaml").read_text())
     p.update(yaml.safe_load((ROOT / "presets" / "roles" / f"{role}.yaml").read_text()))
+    p.pop("switches")
+    p["candidate"].update(languages=["English", "Russian"], seniority="senior", needs_visa=True, based_in="Georgia")
+    p["target"].update(country="nl", countries=["de"], remote=True, salary_target_month=6000)
     for k, v in cand_target.items():
         sect, key = k.split("__")
         p[sect][key] = v
-    p["target"] = config.normalize_target(p)
-    return p
+    return config.normalize_profile(p)
 
 
 def use(p):

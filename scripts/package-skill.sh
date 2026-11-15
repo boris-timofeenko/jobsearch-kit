@@ -7,7 +7,7 @@ OUT=dist/jobsearch-setup.zip
 TMP=$(mktemp -d)
 mkdir -p "$TMP/jobsearch-setup/references/roles" dist
 cp .claude/skills/jobsearch-setup/SKILL.md "$TMP/jobsearch-setup/"
-cp docs/CONFIG.md docs/SETUP.md presets/countries.yaml presets/profile.example.yaml presets/config.example.yaml \
+cp docs/CONFIG.md docs/SETUP.md presets/countries.yaml presets/profile.example.yaml presets/config.example.yaml presets/cv/example.md \
    "$TMP/jobsearch-setup/references/"
 cp presets/roles/*.yaml "$TMP/jobsearch-setup/references/roles/"
 rm -f "$OUT"

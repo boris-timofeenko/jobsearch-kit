@@ -62,9 +62,10 @@ llm:
   workers: 4
   skip_low_yield_after: 20    # компания с N+ оценками и ни одной fit >= 4 (и без твоих статусов) на LLM больше не идёт
 
-cv:                           # кнопка «📄 CV под вакансию» в боте и `jobsearch cv <id>` — нужен LaTeX-исходник резюме
-  tex: my/cv.tex
-  bank: my/cv_bank.yaml
+cv:                           # кнопка «📄 CV под вакансию» в боте и `jobsearch cv <id>`
+  # само резюме — switches.cv в my/profile.yaml (.docx, .tex, .md); source здесь — для профилей без switches
+  source: my/cv.tex
+  bank: my/cv_bank.yaml       # необязательно: варианты заголовка, навыки «можно добавить», синонимы, строки про визу
   model_cli: opus             # одна оценка на клик, поэтому самая сильная модель
   model_api: claude-opus-5
   max_edits: 5

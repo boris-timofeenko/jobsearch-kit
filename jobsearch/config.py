@@ -141,6 +141,156 @@ def default_location_penalty(target):
     return out
 
 
+# ------------------------------------------------------------------ switches
+# Short answers at the top of my/profile.yaml. apply_switches() turns them into the detailed fields the code reads;
+# a profile without `switches` keeps working as before. Values: what each switch accepts, the first is the default.
+SWITCH_VALUES = {
+    "goal": ("both", "relocate", "remote"),
+    "visa": ("needed", "not_needed"),
+    "other_language": ("skip", "flag", "any"),
+    "level": ("senior", "junior", "mid", "lead"),
+    "contract": ("penalize", "skip", "ok"),
+    "outsourcing": ("penalize", "skip", "ok"),
+    "agencies": ("penalize", "skip", "ok"),
+    "public_sector": ("skip", "ok"),
+    "ai": ("neutral", "prefer", "avoid"),
+}
+# What the code does without a switch: the behaviour the rules were calibrated with
+DEFAULT_PREFS = {"other_language": "skip", "contract": "penalize", "outsourcing": "penalize", "agencies": "penalize",
+                 "public_sector": "skip", "eu_offices": True, "remote": True, "salary_min": None}
+PENALTY_KEYS = {"contract": ("contractor", -2), "outsourcing": ("consultancy", -1), "agencies": ("agency", -1)}
+AI_BONUS = {"prefer": {"ai_first": 2, "ai_product": 2, "ai_tooling": 1},
+            "neutral": {"ai_first": 0, "ai_product": 0, "ai_tooling": 0},
+            "avoid": {"ai_first": -2, "ai_product": -1, "ai_tooling": 0}}
+# remote-only job boards: no use for a relocation-only goal
+REMOTE_ONLY_AGGREGATORS = {"remotive", "remoteok", "workingnomads", "weworkremotely", "jobicy", "himalayas"}
+CV_FORMATS = {".tex": "latex", ".docx": "docx", ".md": "markdown", ".markdown": "markdown", ".pdf": "text",
+              ".txt": "text"}
+
+
+def _choice(sw, name, problems):
+    v = sw.get(name)
+    if v is None:
+        return None
+    v = str(v).strip().lower() if not isinstance(v, bool) else v
+    if v not in SWITCH_VALUES[name]:
+        problems.append(f"switches.{name}: {sw[name]!r}, нужно одно из: {', '.join(SWITCH_VALUES[name])}")
+        return None
+    return v
+
+
+def apply_switches(profile):
+    """Write the switches into candidate / target / prefs. A switch wins over the same field set elsewhere in the
+    profile (the clash is listed in profile['_notes'] for `check`); fit_adjustments numbers set by hand still decide
+    how big a penalty is, the switch decides whether there is one."""
+    sw = dict(profile.get("switches") or {})
+    cand = profile.setdefault("candidate", {}) or {}
+    t = profile.setdefault("target", {}) or {}
+    profile["candidate"], profile["target"] = cand, t
+    notes, bad = profile.setdefault("_notes", []), profile.setdefault("_problems", [])
+    prefs = dict(DEFAULT_PREFS)
+
+    def put(where, key, value, label):
+        old = where.get(key)
+        if old is not None and old != value:
+            notes.append(f"switches.{label} перекрывает {key}: {old!r} → {value!r}")
+        where[key] = value
+
+    goal = _choice(sw, "goal", bad)
+    countries = sw.get("countries")
+    if countries is not None and not isinstance(countries, list):
+        countries = [countries]
+    if goal == "remote":
+        if countries:
+            notes.append("switches.goal: remote — список countries не используется")
+        put(t, "country", "none", "goal")
+        t["countries"] = []
+        t["remote"] = True
+    else:
+        if countries:
+            put(t, "country", countries[0], "countries")
+            t["countries"] = list(countries[1:])
+        if goal == "relocate":
+            t["remote"] = False
+        elif goal == "both":
+            t["remote"] = True
+    if "eu_offices" in sw:
+        t["eu_offices"] = bool(sw["eu_offices"])
+    visa = _choice(sw, "visa", bad)
+    if visa:
+        put(cand, "needs_visa", visa == "needed", "visa")
+    if sw.get("based_in"):
+        put(cand, "based_in", str(sw["based_in"]), "based_in")
+    if sw.get("languages"):
+        langs = sw["languages"] if isinstance(sw["languages"], list) else [sw["languages"]]
+        put(cand, "languages", [str(x) for x in langs], "languages")
+    level = _choice(sw, "level", bad)
+    if level:
+        put(cand, "seniority", level, "level")
+    for name in ("other_language", "contract", "outsourcing", "agencies", "public_sector"):
+        v = _choice(sw, name, bad)
+        if v:
+            prefs[name] = v
+    adj = t.setdefault("fit_adjustments", {}) or {}
+    t["fit_adjustments"] = adj
+    for name, (key, size) in PENALTY_KEYS.items():
+        if name not in sw:
+            continue
+        if prefs[name] == "ok":                       # no penalty, whatever number is written below
+            if adj.get(key):
+                notes.append(f"switches.{name}: ok обнуляет fit_adjustments.{key}: {adj[key]}")
+            adj[key] = 0
+        else:
+            adj.setdefault(key, size)                 # a number written by hand still sets the size
+    ai = _choice(sw, "ai", bad)
+    if ai == "neutral":
+        adj.update(AI_BONUS["neutral"])
+    elif ai:
+        for k, v in AI_BONUS[ai].items():
+            adj.setdefault(k, v)
+    if "salary_min" in sw:
+        v = sw["salary_min"]
+        if isinstance(v, str) and v.strip().lower() == "visa":
+            prefs["salary_min"] = None if cand.get("needs_visa", True) else 0
+        else:
+            try:
+                prefs["salary_min"] = max(0, int(v or 0))
+            except (TypeError, ValueError):
+                bad.append(f"switches.salary_min: {v!r}, нужно visa, число €/мес или 0")
+    if sw.get("salary_target"):
+        put(t, "salary_target_month", int(sw["salary_target"]), "salary_target")
+    if sw.get("cv"):
+        profile["_cv"] = str(sw["cv"])
+    prefs["eu_offices"] = bool(t.get("eu_offices", True))
+    profile["prefs"] = prefs
+    return profile
+
+
+def normalize_profile(profile):
+    """Switches first, then the target countries; afterwards the profile has the shape every module reads."""
+    apply_switches(profile)
+    explicit_floor = profile["target"].get("salary_floor_month")       # set by hand, before the catalog fills it
+    profile["target"] = normalize_target(profile)
+    prefs = profile["prefs"]
+    prefs["remote"] = bool(profile["target"].get("remote", True))
+    if prefs["salary_min"] is None and not profile["candidate"].get("needs_visa", True):
+        prefs["salary_min"] = int(explicit_floor or 0)    # visa thresholds mean nothing without a visa
+    if prefs["salary_min"] is not None:             # an own minimum replaces the visa floors everywhere
+        profile["target"]["salary_floor_month"] = prefs["salary_min"] or None
+    return profile
+
+
+def cv_source(cfg):
+    """(path, format) of the CV: switches.cv, else cv.source / cv.tex in the config. Format by extension."""
+    p = cfg.get("profile") or {}
+    c = cfg.get("cv") or {}
+    raw = p.get("_cv") or c.get("tex") or c.get("source") or "my/cv.tex"    # an old my/config `cv.tex` still counts
+    if str(raw).lower() in ("none", "no", "off"):
+        return None, "none"
+    path = path_in_project(raw)
+    return path, CV_FORMATS.get(path.suffix.lower(), "unknown")
+
+
 # ------------------------------------------------------------------ sources derived from the profile
 def default_linkedin_locations(profile):
     """Primary country with every query and up to 100 pages; each extra country and the remote EU search with the
@@ -167,9 +317,11 @@ def load(my=None):
     if profile is None:
         raise ConfigError(f"нет {my / 'profile.yaml'}: настрой профиль (скилл /jobsearch-setup в Claude Code "
                           f"или `python -m jobsearch init --role <роль>`, см. docs/SETUP.md)")
-    profile["target"] = normalize_target(profile)
+    normalize_profile(profile)
     cfg["profile"] = profile
     role, t = profile.get("role") or {}, profile["target"]
+    if not profile["prefs"]["remote"] and "aggregators" not in over:     # relocation only: remote boards are noise
+        cfg["aggregators"] = [a for a in cfg.get("aggregators") or [] if a not in REMOTE_ONLY_AGGREGATORS]
     li = cfg.setdefault("linkedin", {})
     if not li.get("queries"):
         li["queries"] = list(role.get("queries") or [])
@@ -207,8 +359,11 @@ def load_companies(files):
 def problems(cfg):
     """What would make runs useless or crash, in words the owner can act on. Empty list = fine."""
     p = cfg["profile"]
-    out = []
+    out = list(p.get("_problems") or [])
     cand, role, t = p.get("candidate") or {}, p.get("role") or {}, p["target"]
+    path, fmt = cv_source(cfg)
+    if fmt == "unknown":
+        out.append(f"резюме {path.name}: формат не поддерживается — .tex, .docx, .md, .pdf или .txt")
     if not (cand.get("summary") or "").strip():
         out.append("candidate.summary пуст: модели не с чем сравнивать вакансии")
     if not cand.get("languages"):

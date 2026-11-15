@@ -522,11 +522,16 @@ def cmd_bot(a):
 
 
 def cmd_cv(a):
-    """CV tailored to one stored posting (same as the bot button): PDF into data/cv/, changes printed; --send posts it."""
+    """CV tailored to one stored posting (same as the bot button): PDF/DOCX into data/cv/, changes printed; --send
+    posts it. --inspect only shows what was found in the CV: the pieces tailoring can move."""
     import html
     import re
     from . import cvgen
     cfg = load_cfg()
+    if a.inspect:
+        return inspect_cv(cfg)
+    if not a.id:
+        sys.exit("укажи id вакансии (или --inspect)")
     notify.load_env(ROOT / ".env")
     db = DB(DATA / "jobs.db")
     row = db.c.execute("SELECT rowid, * FROM jobs WHERE id=? OR rowid=?",
@@ -535,12 +540,38 @@ def cmd_cv(a):
         sys.exit(f"нет вакансии {a.id}")
     res = cvgen.build_for_job(dict(row), cfg, log=log)
     plain = lambda s: html.unescape(re.sub(r"<[^>]+>", "", s))
-    print(f"{res.pdf}{'  (из кэша)' if res.cached else ''}\n\n{plain(res.caption)}\n\n{plain(res.details)}")
+    print("\n".join(str(f) for f in [res.pdf] + [p for p, _ in res.extra]) + ("  (из кэша)" if res.cached else "")
+          + f"\n\n{plain(res.caption)}\n\n{plain(res.details)}")
     if a.send:
         from . import bot
         bot.send_document(res.pdf, res.filename, res.caption)
+        for path, filename in res.extra:
+            bot.send_document(path, filename)
         if res.details:
             bot.send_text(res.details)
+
+
+def inspect_cv(cfg):
+    """What tailoring sees in the CV: headline, summary, skill rows, roles and bullets."""
+    import yaml as _yaml
+    from . import cvgen
+    path, fmt = config.cv_source(cfg)
+    print(f"резюме: {path} ({fmt})")
+    if fmt not in ("latex", "markdown", "docx") or not path.exists():
+        sys.exit("«CV под вакансию» работает с существующим .docx, .tex или .md (switches.cv)")
+    bank_path = config.path_in_project((cfg.get("cv") or {}).get("bank", "my/cv_bank.yaml"))
+    bank = _yaml.safe_load(bank_path.read_text()) if bank_path.exists() else {}
+    if fmt == "docx":
+        from . import cv_docx
+        print(cv_docx.inspect(cv_docx.parse(path, bank or {})))
+        return
+    from . import cv_markdown
+    cv = cvgen.parse(cv_markdown.load(path) if fmt == "markdown" else path.read_text())
+    print(f"заголовок: {cvgen.to_plain(cv.macro('cvheadline')) or '—'}")
+    print(f"summary: {len(cv.sentences)} предл.; skills: {len(cv.skills)} строк; ролей: {len(cv.roles)}")
+    for r in cv.roles:
+        print(f"роль {r.id}: {cvgen.to_plain(r.title)} — {cvgen.to_plain(r.company)}, буллетов {len(r.bullets)}"
+              + (f", закреплено {sum(b.pinned for b in r.bullets)}" if any(b.pinned for b in r.bullets) else ""))
 
 
 def cmd_autofill(a):
@@ -552,14 +583,24 @@ def cmd_autofill(a):
     from . import autofill, cvgen
     cfg = load_cfg()
     ccfg = cfg.get("cv") or {}
-    tex_path = config.path_in_project(ccfg.get("tex", "my/cv.tex"))
+    path, fmt = config.cv_source(cfg)
     bank_path = config.path_in_project(ccfg.get("bank", "my/cv_bank.yaml"))
-    if not tex_path.exists():
-        sys.exit(f"нет исходника CV {tex_path}")
-    text = tex_path.read_text()
+    if fmt not in ("latex", "markdown", "docx"):
+        sys.exit("автозаполнение читает резюме в .docx, .tex или .md (switches.cv в my/profile.yaml)")
+    if not path.exists():
+        sys.exit(f"нет файла резюме {path}")
     bank = yaml.safe_load(bank_path.read_text()) if bank_path.exists() else {}
     name = (cfg.get("profile") or {}).get("candidate", {}).get("name", "")
-    prof = autofill.build(text, bank, name)
+    text = None
+    if fmt == "docx":
+        prof = autofill.build("", bank, name, parsed=autofill.parse_docx(path, bank))
+    else:
+        if fmt == "markdown":
+            from . import cv_markdown
+            text = cv_markdown.load(path)
+        else:
+            text = path.read_text()
+        prof = autofill.build(text, bank, name)
     out = Path(a.out) if Path(a.out).is_absolute() else ROOT / a.out
     out.mkdir(parents=True, exist_ok=True)
     (out / "profile.json").write_text(json.dumps(prof, ensure_ascii=False, indent=1) + "\n")
@@ -569,17 +610,25 @@ def cmd_autofill(a):
                             "срок уведомления": prof["answers"]["notice_period"]}.items() if not v]
     if empty:
         print("не задано в cv_bank.yaml → autofill: " + ", ".join(empty))
+    if fmt == "docx" and not prof["education"]:
+        print("образование из DOCX не переносится: эти поля формы заполнишь руками")
     if a.pdf:
         shutil.copyfile(a.pdf, out / "cv.pdf")
         print(f"{out / 'cv.pdf'}: копия {a.pdf}")
     elif not a.no_pdf:
         with tempfile.TemporaryDirectory() as tmp:
             try:
-                pdf, pages = cvgen.compile_pdf(text, tmp)
+                if fmt == "docx":
+                    from . import cv_docx
+                    pdf, pages = cv_docx.to_pdf(path, tmp)
+                    if not pdf:
+                        raise RuntimeError("нет LibreOffice")
+                else:
+                    pdf, pages = cvgen.compile_pdf(text, tmp)
             except RuntimeError as e:
                 sys.exit(f"PDF не собран ({e}); укажи готовый через --pdf или --no-pdf")
             shutil.copyfile(pdf, out / "cv.pdf")
-        print(f"{out / 'cv.pdf'}: собран из {tex_path.name}, страниц {pages}")
+        print(f"{out / 'cv.pdf'}: собран из {path.name}, страниц {pages}")
 
 
 def cmd_reanalyze(a):
@@ -756,29 +805,38 @@ def discover_area(a, names):
 
 # ------------------------------------------------------------------ setup
 def cmd_init(a):
-    """my/profile.yaml from the example plus a role preset, my/config.yaml and .env from their examples. Never
-    overwrites without --force: my/ is the person's own data."""
+    """my/profile.yaml from the example plus a role preset, my/config.yaml and .env from their examples. In a terminal
+    (or with --ask) the switches are asked one by one. Never overwrites without --force: my/ is the person's own data."""
+    from . import wizard
     roles = sorted(p.stem for p in (ROOT / "presets" / "roles").glob("*.yaml"))
-    if not a.role or a.role not in roles:
+    interactive = a.ask or (not a.role and sys.stdin.isatty())
+    role = a.role
+    if interactive and not role:
+        while role not in roles:
+            role = input(f"Роль, ближайшая к твоей ({', '.join(roles)}): ").strip().lower()
+    if role not in roles:
         sys.exit(f"укажи --role: {', '.join(roles)} (близкую, потом подправишь role в my/profile.yaml)")
     my = config.MY
     my.mkdir(parents=True, exist_ok=True)
     prof = my / "profile.yaml"
     if prof.exists() and not a.force:
         sys.exit(f"{prof} уже есть; --force перезапишет")
-    example = (ROOT / "presets" / "profile.example.yaml").read_text(encoding="utf-8")
-    role = (ROOT / "presets" / "roles" / f"{a.role}.yaml").read_text(encoding="utf-8")
+    text = (ROOT / "presets" / "profile.example.yaml").read_text(encoding="utf-8")
+    preset = (ROOT / "presets" / "roles" / f"{role}.yaml").read_text(encoding="utf-8")
     marker = "# ROLE: сюда вставляется пресет роли\n"
-    prof.write_text(example.replace(marker, role.rstrip("\n") + "\n") if marker in example else example + "\n" + role,
-                    encoding="utf-8")
-    print(f"{prof}: пример профиля + роль {a.role}")
+    text = text.replace(marker, preset.rstrip("\n") + "\n") if marker in text else text + "\n" + preset
+    if interactive:
+        text = wizard.run(text, my)
+    prof.write_text(text, encoding="utf-8")
+    print(f"{prof}: профиль, роль {role}" + (", переключатели по твоим ответам" if interactive else " (пример)"))
     for src, dst in ((ROOT / "presets" / "config.example.yaml", my / "config.yaml"),
                      (ROOT / "presets" / "companies.example.yaml", my / "companies.yaml"),
                      (ROOT / ".env.example", ROOT / ".env")):
         if not dst.exists():
             dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
             print(f"{dst}: из {src.name}")
-    print("дальше: заполни candidate и target в my/profile.yaml, токены в .env, потом `python -m jobsearch check`")
+    print("дальше: в my/profile.yaml перепиши candidate.summary своим резюме, токены — в .env, "
+          "потом `python -m jobsearch check`")
 
 
 def cmd_check(a):
@@ -799,9 +857,27 @@ def cmd_check(a):
     print(f"профиль: {config.MY / 'profile.yaml'}")
     print(f"роль: {role.get('name', '?')} · уровень {cand.get('seniority', 'senior')} · языки "
           f"{', '.join(cand.get('languages') or [])} · виза {'нужна' if cand.get('needs_visa', True) else 'не нужна'}")
-    tracks = ([f"{t['primary']['name']} (основная, порог €{t['primary'].get('salary_floor_month') or '—'})"]
-              if t.get("primary") else []) + [f"{c['name']} (€{c.get('salary_floor_month') or '—'})" for c in t["countries"]]
-    print("страны: " + (", ".join(tracks) or "нет (только remote)") + (" · remote EU" if t.get("remote", True) else ""))
+    visa_floors = p["prefs"]["salary_min"] is None
+    floor = (lambda c: f", порог €{c.get('salary_floor_month') or '—'}") if visa_floors else (lambda c: "")
+    tracks = ([f"{t['primary']['name']} (основная{floor(t['primary'])})"] if t.get("primary") else []) + [
+        f"{c['name']}" + (f" (€{c.get('salary_floor_month') or '—'})" if visa_floors else "") for c in t["countries"]]
+    print("страны: " + (", ".join(tracks) or "нет (только remote)") + (" · remote EU" if t.get("remote", True) else "")
+          + ("" if p["prefs"]["eu_offices"] else " · офисы в других странах ЕС не показываются"))
+    pr = p["prefs"]
+    salary = ("порог визы страны" if pr["salary_min"] is None else f"свой минимум €{pr['salary_min']}" if pr["salary_min"]
+              else "не отсекается")
+    word = {"skip": "отсеивать", "flag": "только пометка", "any": "не смотреть", "penalize": "ниже в списке",
+            "ok": "как остальные"}
+    print(f"зарплата: {salary} · чужой язык: {word[pr['other_language']]} · контракт: {word[pr['contract']]} · "
+          f"аутсорс: {word[pr['outsourcing']]} · рекрутеры: {word[pr['agencies']]} · госсектор: {word[pr['public_sector']]}")
+    cv_path, cv_fmt = config.cv_source(cfg)
+    cv_what = {"latex": "CV под вакансию → PDF", "docx": "CV под вакансию → DOCX (и PDF, если есть LibreOffice)",
+               "markdown": "CV под вакансию → PDF через встроенный шаблон", "text": "только текст, без CV под вакансию",
+               "none": "не задано", "unknown": "формат не поддерживается"}[cv_fmt]
+    print(f"резюме: {cv_path.relative_to(ROOT) if cv_path and cv_path.is_relative_to(ROOT) else cv_path or '—'} "
+          f"({cv_what}{'' if not cv_path or cv_path.exists() else ', файла нет'})")
+    for n in p.get("_notes") or []:
+        print(f"  заметка: {n}")
     li = cfg.get("linkedin", {})
     print(f"LinkedIn: {'вкл' if li.get('enabled', True) else 'выкл'}, запросов {len(li.get('queries') or [])}, "
           f"локации: " + ", ".join(f"{l['name']}{' (remote)' if l.get('remote') else ''}" for l in li.get("locations") or []))
@@ -873,8 +949,9 @@ def main(argv=None):
     bt.set_defaults(fn=cmd_bot)
 
     cvp = sub.add_parser("cv", help="CV под вакансию: PDF в data/cv/ и что изменено (как кнопка в боте)")
-    cvp.add_argument("id", help="id вакансии или rowid")
-    cvp.add_argument("--send", action="store_true", help="прислать PDF в Telegram")
+    cvp.add_argument("id", nargs="?", help="id вакансии или rowid")
+    cvp.add_argument("--send", action="store_true", help="прислать результат в Telegram")
+    cvp.add_argument("--inspect", action="store_true", help="показать, что найдено в резюме (без модели)")
     cvp.set_defaults(fn=cmd_cv)
 
     af = sub.add_parser("autofill", help="профиль и PDF для расширения автозаполнения откликов (extension/)")
@@ -910,6 +987,7 @@ def main(argv=None):
     it = sub.add_parser("init", help="создать my/profile.yaml из пресета роли, my/config.yaml и .env")
     it.add_argument("--role", help="пресет из presets/roles/")
     it.add_argument("--force", action="store_true", help="перезаписать существующий my/profile.yaml")
+    it.add_argument("--ask", action="store_true", help="задать вопросы-переключатели (в терминале и так спрашивает)")
     it.set_defaults(fn=cmd_init)
 
     ck = sub.add_parser("check", help="проверить настройку: профиль, что будет искаться, токены, LLM")
