@@ -262,6 +262,36 @@ def test_reanalyze_retires_titles_the_role_no_longer_matches(tmp_path, monkeypat
     cli.main(["reanalyze"])
     rows = {r["id"]: r for r in DB(tmp_path / "jobs.db").query("1=1")}
     assert rows["x:1"]["verdict"] == "live"
-    assert rows["x:2"]["verdict"] == "other" and "больше не подходит под роль" in rows["x:2"]["reasons"]
+    assert rows["x:2"]["verdict"] == "other" and "не по роли" in rows["x:2"]["reasons"]
     cli.main(["reanalyze", "--prune"])
     assert [r["id"] for r in DB(tmp_path / "jobs.db").query("1=1")] == ["x:1"]
+
+
+def test_assess_again_reassesses_after_a_profile_change(tmp_path, monkeypatch):
+    from jobsearch import cli
+    from jobsearch.db import DB
+
+    class Model:
+        name, calls = "api", 0
+
+        def assess(self, job):
+            Model.calls += 1
+            return llm.Assessment(fit=8)
+    monkeypatch.setattr(cli, "DATA", tmp_path)
+    monkeypatch.setattr(cli, "make_sponsors", lambda cfg, http: None)
+    monkeypatch.setattr(cli.llm, "pick_backend", lambda cfg: (Model(), ""))
+    db = DB(tmp_path / "jobs.db")
+    j = Job(id="x:1", source="x", company="Acme", title="Senior QA Automation Engineer", url="u",
+            location="Amsterdam, Netherlands", description="Playwright and TypeScript test automation. " * 12)
+    db.insert(j)
+    j.verdict, j.reasons, j.llm_fit = "skip", ["LLM: не та роль"], 2
+    j.llm_json = llm.Assessment(fit=2, is_target_role=False).model_dump_json()
+    db.update_analysis(j)
+    db.commit()
+    cli.main(["assess", "--days", "1"])                 # already assessed: nothing to do
+    assert Model.calls == 0
+    with pytest.raises(SystemExit):
+        cli.main(["assess", "--again"])                 # needs a period
+    cli.main(["assess", "--again", "--days", "1"])
+    row = DB(tmp_path / "jobs.db").get("x:1")
+    assert Model.calls == 1 and row["verdict"] == "live" and row["llm_fit"] >= 8

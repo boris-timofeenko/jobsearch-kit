@@ -295,8 +295,8 @@ def _country_codes():
 
 
 def select_candidates(jobs, cfg):
-    """Which jobs deserve an LLM call. Cheap cuts first: only live (or hardware-rescuable) postings with real text;
-    remote track only above a score floor and never for agency postings without a named client."""
+    """Which jobs deserve an LLM call. Cheap cuts first: only live (or off-domain-rescuable) postings with real text;
+    remote and eu tracks only above a score floor (min_score_remote); target countries first."""
     floor = cfg.get("min_score_remote", 50)
     out = []
     for j in jobs:
@@ -594,10 +594,10 @@ def apply_assessment(job, a: Assessment):
         adj.append((FIT_ADJ["relocation_yes"], "переезд явно"))
     ai = {"ai_first": FIT_ADJ["ai_first"], "product": FIT_ADJ["ai_product"],
           "tooling": FIT_ADJ["ai_tooling"]}.get(a.ai_role, 0)
-    if ai and strong_role:
+    if ai and (strong_role or ai < 0):              # a penalty applies whatever the model said
         adj.append((ai, {"ai_first": "AI-first", "product": "AI в продукте"}.get(a.ai_role, "AI-инструменты")))
     for name, bonus in FOCUS_FIT.items():
-        if bonus and strong_role and f"фокус: {name}" in job.reasons:
+        if bonus and (strong_role or bonus < 0) and f"фокус: {name}" in job.reasons:
             adj.append((bonus, name))
     # who employs and how: a product company hiring to staff is the default target; outsourcing/outstaffing even with
     # a staff contract, recruiters and contracts rank lower (calibrated 25.09 on a QA owner's clicks: BairesDev

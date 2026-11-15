@@ -141,3 +141,9 @@ def test_autofill_from_docx(docx_cv):
     assert p["experience"][0]["start"] == {"year": 2022, "month": 1} and p["experience"][0]["current"]
     prof = autofill.build("", BANK, "", parsed=p)
     assert prof["person"]["first_name"] == "Anna" and "FastAPI" in prof["skills"]
+
+
+def test_own_section_names_are_added_to_the_usual_ones(tmp_path):
+    path = make_docx(tmp_path / "cv.docx")
+    cv = cv_docx.parse(path, {**BANK, "docx": {"summary": "кратко обо мне"}})
+    assert len(cv.sentences) == 3                       # "Summary" is still found

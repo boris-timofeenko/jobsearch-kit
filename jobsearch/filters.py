@@ -174,12 +174,15 @@ def configure(profile):
     PRIMARY = target["primary"]["code"] if target.get("primary") else ""
     # in_search_area keeps board postings in any target country; with no primary country nothing extra is needed
     NL_LOC = COUNTRIES[0]["regex"] if COUNTRIES else re.compile(r"(?!x)x")
-    if role.get("title_include"):
-        RELEVANT_TITLE = re.compile("|".join(f"(?:{x})" for x in role["title_include"]), I)
-    if role.get("title_exclude"):
-        NOT_RELEVANT_TITLE = re.compile("|".join(f"(?:{x})" for x in role["title_exclude"]), I)
-    if role.get("stack"):
-        STACK = [(re.compile(k, I), int(v)) for k, v in role["stack"].items()]
+    # what the profile says, also when it says nothing: no include = no title passes (check reports it),
+    # no exclude = nothing excluded; never the QA lists this module starts with
+    never = re.compile(r"(?!x)x")
+    RELEVANT_TITLE = re.compile("|".join(f"(?:{x})" for x in role["title_include"]), I) \
+        if role.get("title_include") else never
+    NOT_RELEVANT_TITLE = re.compile("|".join(f"(?:{x})" for x in role["title_exclude"]), I) \
+        if role.get("title_exclude") else never
+    # no stack in the profile = no stack points, not the QA list this module starts with
+    STACK = [(re.compile(k, I), int(v)) for k, v in (role.get("stack") or {}).items()]
     TITLE_BOOST = [(re.compile(k, I), int(v)) for k, v in (role.get("title_boost") or {}).items()]
     FOCUS = [{"name": f["name"], "regex": re.compile(f["regex"], I), "score": int(f.get("score", 0)),
               "fit": int(f.get("fit", 0))} for f in role.get("focus") or []]
@@ -418,6 +421,9 @@ def analyze(job, sponsors, cfg):
                        or (OFF_DOMAIN["desc"] and OFF_DOMAIN["desc"].search(job.description))):
         skip.append(OFF_DOMAIN_REASON)
     m = NO_SPONSOR.search(text) if NEEDS_VISA else None
+    if m and lives_there(text[m.start():m.end() + 40]):        # "residents of Poland only" for someone in Poland
+        reasons.append(f"ты живёшь в {BASED_IN}: «{m.group(0)[:60]}» — подходит")
+        m = None
     if m:
         skip.append(f"без спонсорства: «{m.group(0)[:60]}»")
 
@@ -587,6 +593,15 @@ def out_of_goal(job):
     return bool(why)
 
 
+EU_ONLY = re.compile(r"\b(eu|eea|european union|europe(an)?)\b", I)
+
+
+def lives_there(text):
+    """The text names the country the candidate lives in (candidate.based_in) and does not ask for its citizenship."""
+    return bool(BASED_IN) and bool(re.search(rf"\b{re.escape(BASED_IN)}\b", text, I)) and not re.search(
+        r"citizen|nationalit|passport", text, I)
+
+
 def relocation_track(track):
     """Tracks where the candidate would move to the job's country: target countries and on-site/hybrid EU."""
     return track in COUNTRY_CODES or track == "eu"
@@ -595,9 +610,12 @@ def relocation_track(track):
 def residency_blocks(quote, track, location):
     """Does a "must live in …" requirement close the job for someone who would relocate? See RESIDENCY_HARD.
     A requirement to live where the candidate already lives (candidate.based_in) is no obstacle on any track."""
-    if BASED_IN and re.search(rf"\b{re.escape(BASED_IN)}\b", quote, I) and not re.search(
-            r"citizen|nationalit|passport", quote, I):
+    if lives_there(quote):
         return False
+    if not NEEDS_VISA and EU_ONLY.search(quote) and not NON_EU_PLACE.search(quote):
+        from .cvgen import country_of
+        if not country_of(quote):           # "EU citizens only", "right to work in the EU": an EU citizen has it
+            return False
     if not relocation_track(track):
         return True
     hard = RESIDENCY_HARD if NEEDS_VISA else RESIDENCY_HARD_NO_VISA

@@ -45,7 +45,7 @@ if $WITH_BOT; then
 <plist version="1.0"><dict><key>Label</key><string>$BOT</string>
 <key>ProgramArguments</key><array><string>$DIR/.venv/bin/python</string><string>-m</string><string>jobsearch</string><string>bot</string></array>
 <key>WorkingDirectory</key><string>$DIR</string>
-<key>EnvironmentVariables</key><dict><key>PATH</key><string>$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string></dict>
+<key>EnvironmentVariables</key><dict><key>PATH</key><string>$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/Library/TeX/texbin:/usr/bin:/bin</string></dict>
 <key>RunAtLoad</key><true/><key>KeepAlive</key><true/>
 <key>StandardOutPath</key><string>$DIR/data/logs/bot.out</string>
 <key>StandardErrorPath</key><string>$DIR/data/logs/bot.err</string>

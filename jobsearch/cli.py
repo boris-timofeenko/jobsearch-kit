@@ -462,14 +462,20 @@ def print_jobs(jobs):
 
 
 def cmd_assess(a):
-    """LLM-assess stored jobs that have a description but no assessment yet (e.g. after enabling a backend)."""
+    """LLM-assess stored jobs that have a description but no assessment yet (e.g. after enabling a backend).
+    --again: assess once more what was assessed already, after the profile changed (summary, strengths, role);
+    heuristics run afresh first so the old assessment's verdict does not decide who goes to the model."""
     cfg = load_cfg()
     notify.load_env(ROOT / ".env")
+    if a.again and not (a.days or a.since):
+        sys.exit("--again переоценивает уже оценённое и тратит модель: укажи период, --days N или --since ДАТА")
     backend, why = llm.pick_backend(cfg.get("llm", {}))
     if not backend:
         sys.exit(f"LLM недоступен: {why}")
     db = DB(DATA / "jobs.db")
-    where = "verdict IN ('live','other','skip') AND description != '' AND (llm_json IS NULL OR llm_json='')"
+    where = "verdict IN ('live','other','skip') AND description != ''"
+    if not a.again:
+        where += " AND (llm_json IS NULL OR llm_json='')"
     params = []
     if a.since:
         where += " AND first_seen >= ?"
@@ -481,11 +487,15 @@ def cmd_assess(a):
     rows = db.query(where, params + [filters.PRIMARY], order="CASE track WHEN ? THEN 0 ELSE 1 END, score DESC",
                     limit=100000)
     jobs = []
+    sponsors = make_sponsors(cfg, Http()) if a.again else None
     for r in rows:
         j = row_to_job(r)
-        j.track, j.verdict, j.score, j.sponsor_name, j.sponsor_kvk = r["track"], r["verdict"], r["score"], r["sponsor_name"], r["sponsor_kvk"]
-        j.reasons = [x for x in (r["reasons"] or "").split(" | ") if x]
-        j.lang, j.salary_month = r["lang"], r["salary_month"]
+        if a.again:                              # fresh heuristics: the old assessment must not decide
+            safe_analyze(j, sponsors, cfg)
+        else:
+            j.track, j.verdict, j.score, j.sponsor_name, j.sponsor_kvk = r["track"], r["verdict"], r["score"], r["sponsor_name"], r["sponsor_kvk"]
+            j.reasons = [x for x in (r["reasons"] or "").split(" | ") if x]
+            j.lang, j.salary_month = r["lang"], r["salary_month"]
         jobs.append(j)
     jobs = llm.select_candidates(jobs, cfg.get("llm", {}) | {"max_per_run": a.limit})
     log(f"assessing {len(jobs)} stored jobs via {backend.name} (after cheap cuts)")
@@ -651,7 +661,7 @@ def cmd_reanalyze(a):
         safe_analyze(j, sponsors, cfg)
         if off_role and j.verdict == "live":
             j.verdict = "other"
-            j.reasons.append("заголовок больше не подходит под роль (title_include / title_exclude)")
+            j.reasons.append("не по роли: заголовок больше не проходит title_include / title_exclude")
         fp = j.fingerprint()
         db.c.execute("UPDATE jobs SET fingerprint=? WHERE id=?", (fp, j.id))
         orig = same_original(j, fps.get(fp, []), lambda i: texts[i])
@@ -947,6 +957,8 @@ def main(argv=None):
     asx.add_argument("--days", type=int)
     asx.add_argument("--since", help="ISO date, e.g. 2026-09-04")
     asx.add_argument("--limit", type=int, default=300)
+    asx.add_argument("--again", action="store_true",
+                     help="переоценить и уже оценённое (после правки профиля); нужен --days или --since")
     asx.set_defaults(fn=cmd_assess)
 
     bt = sub.add_parser("bot", help="Telegram-бот: кнопки статусов под карточками, /applied, /stats")

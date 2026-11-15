@@ -13,7 +13,8 @@ description: >
 
 Код общий и уже работает; всё про человека — в папке `my/` (не в git) и в `.env`. Твоя работа — не переписывать
 код, а собрать хороший профиль, проверить его на реальных заголовках и вакансиях и довести до первых карточек в
-Telegram. Справочник всех полей — `docs/CONFIG.md`, ручная инструкция для человека — `docs/SETUP.md`, устройство и
+Telegram. Справочник всех полей — `docs/CONFIG.md`, ручная инструкция для человека — `docs/SETUP.md`, путь вакансии
+и все причины отсева — `docs/HOW-IT-WORKS.md` (по нему объясняй человеку, почему что-то не пришло), устройство и
 накопленные решения — `AGENTS.md` (читай, прежде чем трогать логику в `jobsearch/`).
 
 Общайся на языке человека (по умолчанию русский), коротко, по шагам. После каждого шага — команда проверки и её
@@ -109,13 +110,19 @@ python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt
 
 ## 4. Источники
 
-`my/config.yaml` (создан `init`, все варианты в комментариях):
+`my/config.yaml` (создан `init`, основные варианты в комментариях; все ключи — `docs/CONFIG.md`):
 - `company_files`: `my/companies.yaml` и `boards/curated.yaml` всегда; `boards/nl-ind-sponsors.yaml`, если среди
   стран есть Нидерланды; `boards/de-large.yaml` — если Германия.
-- Компании мечты: `.venv/bin/python -m jobsearch discover "Company A" "Company B"` печатает готовые строки — добавь в
-  `my/companies.yaml`. Не нашлась — у компании своя платформа найма; это нормально, её вакансии придут с LinkedIn.
-- `aggregators`: по умолчанию хороши; добавь `iamexpat, undutchables` для Нидерландов, `arbeitsagentur` для Германии.
-- Своя страна вне каталога или массовый перебор работодателей страны — `AGENTS.md`, «Массовые списки досок».
+- Компании мечты: `.venv/bin/python -m jobsearch discover "Company A" "Company B"` печатает готовые строки — допиши
+  их в конец `my/companies.yaml` (строку `[]`, если она там есть, убери: иначе YAML не разберётся). Не нашлась —
+  у компании своя платформа найма или Workday/SuccessFactors, которые `discover` не перебирает; её вакансии придут с
+  LinkedIn.
+- `aggregators`: по умолчанию хороши. Свой список заменяет общий целиком, поэтому, добавляя `iamexpat, undutchables`
+  (Нидерланды) или `arbeitsagentur` (Германия), выпиши весь список из `config.yaml`; при `goal: relocate` не пиши в
+  него remote-доски (remotive, remoteok, weworkremotely, workingnomads, himalayas, jobicy) — со своим списком они не
+  выключаются сами.
+- Своя страна вне каталога — `docs/CONFIG.md`, «target»; массовый перебор работодателей страны — `AGENTS.md`,
+  «Доски компаний».
 
 ## 5. Telegram и модель
 
@@ -123,20 +130,22 @@ Telegram (человек делает руками, ты подсказывае�
 1. В Telegram: @BotFather → `/newbot` → имя → получить токен вида `123456:ABC…` → `TELEGRAM_BOT_TOKEN` в `.env`.
 2. Написать своему боту любое сообщение, затем узнать chat id:
    ```bash
-   curl -s "https://api.telegram.org/bot$TOKEN/getUpdates" | python3 -c "import json,sys; print({u['message']['chat']['id'] for u in json.load(sys.stdin)['result'] if 'message' in u})"
+   set -a; . ./.env; set +a
+   curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates" | python3 -c "import json,sys; print({u['message']['chat']['id'] for u in json.load(sys.stdin)['result'] if 'message' in u})"
    ```
    → `TELEGRAM_CHAT_ID` в `.env`. Бот отвечает только этому чату.
 3. `.venv/bin/python -m jobsearch telegram-test` — должно прийти «jobsearch на связи».
 
 Модель: на компьютере с залогиненным `claude` ничего не нужно (бэкенд cli). Для сервера — `claude setup-token` на
 компьютере человека, токен `sk-ant-oat01-…` (108 символов) человек копирует **руками** в `CLAUDE_CODE_OAUTH_TOKEN`:
-при захвате из вывода терминала токен портится. Либо `ANTHROPIC_API_KEY`. Секреты не проси вставлять в чат — пусть
+при захвате из вывода терминала токен портится. Либо `ANTHROPIC_API_KEY` (тогда подписка не используется и Claude
+CLI на сервер не ставится). Секреты не проси вставлять в чат — пусть
 человек сам впишет их в `.env`. `.venv/bin/python -m jobsearch check` показывает выбранный бэкенд.
 
 ## 6. Первый прогон и калибровка
 
 ```bash
-.venv/bin/python -m jobsearch run --time-filter r259200          # 3 дня; 15–40 минут
+.venv/bin/python -m jobsearch run --time-filter r259200          # 3 дня; обычно 20–40 минут, при 429 до 1,5 ч
 .venv/bin/python -m jobsearch report --hours 72                  # data/reports/latest.html
 .venv/bin/python -m jobsearch list --all --hours 72 --limit 300  # всё, включая отсеянное, с причинами
 ```
@@ -150,18 +159,25 @@ Telegram (человек делает руками, ты подсказывае�
 skip нужного). Правь профиль по причинам отсева (раздел 8), затем `.venv/bin/python -m jobsearch reanalyze` —
 пересчитывает эвристики по всей базе, оценки модели сохраняются. Вакансии, чей заголовок после правки
 `title_include`/`title_exclude` больше не проходит, `reanalyze` прячет (verdict other), `reanalyze --prune` удаляет
-их из базы. Карточки в Telegram: `telegram-test --sample 3`.
+их из базы (кроме тех, где человек уже нажимал кнопку). Оценки модели `reanalyze` не пересчитывает: после правки
+`summary`, `strengths`, роли — `assess --again --days 3` (тратит подписку, поэтому только за период). Карточки в
+Telegram: `telegram-test --sample 3`.
 
 ## 7. Расписание
 
+Одно место: компьютер или сервер. Два расписания с одним ботом мешают друг другу — второй бот перехватывает кнопки.
+
 - **Mac**: проект не в `~/Documents`, `~/Desktop`, `~/Downloads` (launchd туда не пускает, расписание молча падает):
   `mv` в `~/jobsearch`, пересоздать `.venv`, затем `scripts/install_launchd.sh 9 13 18 --bot`.
-- **Linux-ноутбук**: cron, пример в `docs/SETUP.md`.
-- **VPS** (Hetzner/Contabo/любой Ubuntu 22.04+, 2 ГБ RAM хватает): SSH-ключ на root, затем
-  `deploy/deploy.sh root@<ip>` — копирует проект, ставит пакеты, venv, Claude CLI (если в `.env` подписочный токен),
-  systemd-таймеры (каждые 2 часа 08–22 + ночной deep) и бота. Базу с ноутбука переносить, если первые прогоны были
-  локально, иначе первый серверный прогон пришлёт всё заново: `scp data/jobs.db root@<ip>:/opt/jobsearch/data/` и
-  `chown jobsearch:jobsearch`. Обновление: `git pull && deploy/deploy.sh root@<ip>`.
+- **Linux-ноутбук**: cron, строки в `docs/SETUP.md`, шаг 9 (с `PATH` для бота).
+- **VPS** (Hetzner/Contabo/любой Ubuntu 22.04+, 2 ГБ RAM хватает): SSH-ключ на root и короткое имя хоста в
+  `~/.ssh/config` (`docs/SETUP.md`, шаг 9), затем `deploy/deploy.sh <хост>` — копирует проект, ставит пакеты, venv,
+  Claude CLI (если в `.env` подписочный токен и нет API-ключа), LaTeX или LibreOffice по формату резюме,
+  systemd-таймеры (каждые 2 часа 08–22 + ночной deep) и бота (если есть его токен). Если первые прогоны были на
+  компьютере: сначала снять там расписание и бота, затем `deploy/deploy.sh <хост> --with-db` — переносит базу
+  безопасно, иначе первый серверный прогон пришлёт всё заново. Обновление: `git pull && deploy/deploy.sh <хост>`.
+- Для «CV под вакансию» с `.tex` или `.md` на своём компьютере нужен LaTeX, для PDF из `.docx` — LibreOffice
+  (`docs/SETUP.md`, шаг 2, «Резюме»); на сервере их ставит `deploy.sh`.
 
 ## 8. Рецепты настройки
 
@@ -169,21 +185,23 @@ skip нужного). Правь профиль по причинам отсев
 |---|---|
 | нужная вакансия не пришла | `list --all --hours 48` → найти её; нет в базе — заголовок не прошёл `title_include` или источник её не видит; есть со skip — читать причину |
 | много мусора с другой ролью | дописать соседние роли в `title_exclude` и `not_this_role` |
-| отсекает «текст на немецком» | добавить язык в `switches.languages`, если человек им владеет; учит — `other_language: flag` или `any` |
+| отсекает «текст на немецком» | добавить язык в `switches.languages`, если человек им владеет; учит — `other_language: any` (`flag` делает пометкой только требование языка, объявления на самом языке отсеиваются по-прежнему) |
 | «нужен другой язык» на nice-to-have | это ошибка правила — смотри `filters.other_language_required`, `SOFTENERS` |
-| fit занижен у хороших | уточнить `summary` (стек, домены), `strengths`, `small_gap`; посмотреть `note` модели в отчёте |
+| fit занижен у хороших | уточнить `summary` (стек, домены), `strengths`, `small_gap`; посмотреть `note` модели в отчёте; потом `assess --again --days N` |
 | хорошие в другой стране теряются | добавить страну в `switches.countries`, включить `eu_offices` или поднять страну в `location_penalty` |
 | зарплата режет | `switches.salary_min`: свой минимум числом или `0`; порог страны — в `countries` словарём. Зарплата распознаётся только в евро: суммы в злотых, кронах, франках не отсекают и не поднимают вакансию |
 | мало вакансий | больше `queries`, свои доски (`discover`), агрегаторы страны; первые дни — норма, база копится |
 | «CV под вакансию» не меняет DOCX или отклоняет правки | `cv --inspect`; правки в абзацах с жирным словом или ссылкой не применяются — это нормально, буллеты всё равно переставляются |
 | дорого по подписке/API | `llm.min_score_remote` выше, `max_per_run` ниже, `telegram.min_fit` не влияет на стоимость |
 
-После любой правки профиля: `check --fast`, затем `reanalyze`.
+После любой правки профиля: `check --fast`, затем `reanalyze`. Если всё работает на сервере — `deploy/deploy.sh
+<хост>` и `reanalyze` там (`docs/SETUP.md`, шаг 10): локальная база устарела.
 
 ## Нельзя
 
 - Коммитить `my/`, `.env`, `data/` (они в `.gitignore`) и вставлять секреты в чат или в логи.
-- Запускать два `run` одновременно: одна SQLite. На сервере это держит flock, локально — следи сам.
+- Запускать `run` руками, пока идёт плановый: одна SQLite. Плановые прогоны друг другу не мешают: если идёт другой,
+  прогон пропускается (flock на сервере, замок в `scripts/run-local.sh`), следующий сам догонит пропуск.
 - Убирать `stdin=DEVNULL` и `--system-prompt`/`--tools ""` у CLI-бэкенда (`llm.py`): без них вызов стоит в 40 раз дороже.
 - Подключать Indeed/Glassdoor/StepStone/XING: антибот или запрет в robots.txt.
 - Пугаться 429 от LinkedIn: волны по 1–3 дня бывают, следующий прогон догоняет пропущенное сам.

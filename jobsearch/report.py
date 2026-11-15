@@ -107,39 +107,6 @@ def telegram_card(r):
     return "\n".join(lines)
 
 
-def telegram_digest(rows, title):
-    """One card per posting: fit, verdict, where/how, sponsor, salary, the model's note, and flags worth knowing."""
-    import json
-    if not rows:
-        return f"<b>{html.escape(title)}</b>\nНовых подходящих вакансий нет."
-    lines = [f"<b>{html.escape(title)}</b>: {len(rows)} новых"]
-    cur = None
-    verdict_ru = {"apply": "откликаться", "maybe": "посмотреть", "skip": "мимо"}
-    for r in by_track(rows):
-        if r["track"] != cur:
-            cur = r["track"]
-            lines.append(f"\n<b>— {TRACK_RU.get(cur, 'Прочее')} —</b>")
-        try:
-            a = json.loads(r["llm_json"] or "{}")
-        except ValueError:
-            a = {}
-        sp = f"✅ спонсор IND: {r['sponsor_name']}" if r["sponsor_name"] else ("🌐 remote" if r["remote"] else ("❔ не в реестре IND" if r["track"] == "nl" and SPONSOR_CHECK else ""))
-        mode = {"remote": "remote", "hybrid": "hybrid", "onsite": "офис"}.get(a.get("work_mode"), "")
-        scope = a.get("remote_scope") or ""
-        bits = [b for b in [r["location"], mode + (f" ({scope})" if scope else ""), fmt_salary(r), sp] if b]
-        fit = f"fit {r['llm_fit']}/10" if r["llm_fit"] is not None else "без LLM"
-        verdict = verdict_ru.get(a.get("verdict"), "")
-        lines.append(f"\n<b>{fit}</b>{' · ' + verdict if verdict else ''} · <a href=\"{html.escape(r['url'])}\">"
-                     f"{html.escape(r['title'])}</a> — {html.escape(r['company'])}\n<i>{html.escape(' · '.join(bits))}</i>")
-        if r["llm_note"]:
-            lines.append(html.escape(r["llm_note"]))
-        flags = [x for x in (r["reasons"] or "").split(" | ") if x and not x.startswith(("LLM: слабое", "NL-юрлицо", "откликов на LinkedIn"))]
-        if flags:
-            lines.append("⚠️ " + html.escape(" · ".join(flags))[:300])
-        lines.append(f"<code>mark {r['id']} applied</code>")
-    return "\n".join(lines)
-
-
 def markdown(rows, title):
     out = [f"# {title}", "", f"_{_now():%Y-%m-%d %H:%M}_ · {len(rows)} вакансий", "",
            "| Score | Трек | Вакансия | Компания | Локация | Зарплата | Спонсор | Статус | Заметки |",

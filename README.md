@@ -14,11 +14,11 @@ QA, backend, frontend, mobile, DevOps, data и product. Страна, роль, 
 
 ```
 🇩🇪 Германия
-fit 9/10 · откликаться · Senior Backend Engineer (Python) — Acme Payments
+fit 11/10 · откликаться · Senior Backend Engineer (Python) — Acme Payments
 Berlin, Germany · hybrid · €6500/мес · 👥 18 откликов
 Платёжный процессинг на FastAPI и Kafka, команда из 6 человек, есть онколл. Проверить, нужен ли немецкий
 для общения с банками-партнёрами.
-⚠️ LLM: визовая поддержка явно ✅ · фокус: Payments · fit: модель 7 +2 виза явно = 9
+⚠️ фокус: Payments · LLM: визовая поддержка явно ✅ · fit: модель 7 +1 Germany +2 виза явно +1 мало откликов (18) = 11
 [✅ Откликнулся] [⏳ Позже] [🙈 Скрыть]
 [📄 CV под вакансию]
 ```
@@ -41,10 +41,10 @@ claude
 На Mac клонируй в `~/jobsearch`, а не в `~/Documents`, `~/Desktop` или `~/Downloads`: из этих папок macOS не даёт
 запускать задачи по расписанию.
 
-Без Claude Code: `python -m jobsearch init` спросит роль и переключатели прямо в терминале, остальное — по
-[docs/SETUP.md](docs/SETUP.md), около часа. Если терминала нет
-совсем, скилл можно загрузить в приложение Claude (Settings → Capabilities → Skills): `scripts/package-skill.sh`
-соберёт `dist/jobsearch-setup.zip`. Там он по резюме подготовит `my/profile.yaml` и `my/config.yaml`, а команды
+Без Claude Code — по [docs/SETUP.md](docs/SETUP.md), около часа: после установки `.venv/bin/python -m jobsearch
+init` спросит роль и переключатели прямо в терминале. Скилл можно загрузить и в приложение Claude без терминала
+(Settings → Capabilities → Skills): архив собирает `scripts/package-skill.sh` в `dist/jobsearch-setup.zip` (у кого
+есть клон — собери и передай). Там он по резюме подготовит `my/profile.yaml` и `my/config.yaml`, а команды
 придётся выполнить самому.
 
 ## Переключатели
@@ -82,14 +82,15 @@ switches:
 
 ```
 LinkedIn ─┐
-доски ────┼─→ дедуп ─→ описания ─→ эвристики ─→ модель ─→ SQLite ─→ отчёт HTML + Telegram
-агрегаторы┘            (полный текст)  (skip с причиной)  (fit 0–10 + поправки)
+доски ────┼─→ уже в базе? ─→ описания ─→ эвристики ─→ дубли ─→ модель ─→ SQLite ─→ отчёт HTML + Telegram
+агрегаторы┘                  (полный текст) (skip с причиной)      (fit 0–10 + поправки)
 ```
 
 1. **Сбор.** LinkedIn ищет по `role.queries` в основной стране, дополнительных странах и remote по Европе. Доски
    компаний — публичные API Greenhouse, Lever, Ashby, Recruitee, Workable, SmartRecruiters, Teamtailor, Personio,
    Workday и корпоративные сайты (SuccessFactors, Phenom). Плюс агрегаторы: Remotive, RemoteOK, We Work Remotely,
-   Himalayas, Landing.jobs, Arbeitnow, Jobicy, The Muse, Workable search, Adzuna, ночью hiring.cafe.
+   Himalayas, Working Nomads, Landing.jobs, Arbeitnow, Jobicy, The Muse, Workable search, Adzuna, в глубоком прогоне
+   hiring.cafe (на сервере — ночью).
 2. **Эвристики** бесплатно отсекают очевидное и раскладывают вакансии по трекам: основная страна, дополнительные
    страны, офис в другой стране ЕС, remote. У каждого отсева записана причина, ничего не удаляется.
 3. **Модель** читает полный текст и отвечает структурой: та ли это роль, fit 0–10 по совпадению стека и уровня,
@@ -97,7 +98,8 @@ LinkedIn ─┐
    контракт модель в fit не учитывает: это делает код поправками, которые видны в карточке.
 4. **Выход**: карточки в Telegram (fit ≥ 4, не больше двух от компании), HTML-отчёт, база для `list`/`report`.
 
-Подробно, с причинами каждого решения, — [AGENTS.md](AGENTS.md).
+Подробно: путь вакансии, все причины отсева и как считается оценка — [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md);
+устройство кода и история решений — [AGENTS.md](AGENTS.md).
 
 ## Где что лежит
 
@@ -132,7 +134,7 @@ LinkedIn ─┐
 git pull
 .venv/bin/pip install -q -r requirements.txt
 .venv/bin/python -m jobsearch check
-deploy/deploy.sh root@<ip>         # если стоит на сервере
+deploy/deploy.sh jobsearch-vps     # если стоит на сервере (имя хоста — docs/SETUP.md, шаг 9)
 ```
 
 `my/`, `.env` и `data/` обновление не трогает.
@@ -142,6 +144,6 @@ deploy/deploy.sh root@<ip>         # если стоит на сервере
 - Отклики сами не отправляются. Есть браузерное расширение, которое заполняет форму отклика из резюме
   ([extension/README.md](extension/README.md)), но кнопку «Отправить» жмёшь ты.
 - Indeed, Glassdoor, StepStone, XING не подключены: антибот или запрет в robots.txt.
-- Реестр спонсоров есть только у Нидерландов (IND), он проверяется для каждого работодателя. Для других стран о
-  визе судит модель по тексту.
+- Реестр спонсоров есть только у Нидерландов (IND): если нужна виза, им проверяется каждый работодатель с
+  вакансией в Нидерландах. Для других стран о визе судит модель по тексту.
 - Интерфейс, отчёты и заметки модели — на русском.

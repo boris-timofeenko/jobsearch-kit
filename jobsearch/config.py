@@ -203,19 +203,22 @@ def apply_switches(profile):
     if goal == "remote":
         if countries:
             notes.append("switches.goal: remote — список countries не используется")
+        if sw.get("eu_offices"):
+            notes.append("switches.goal: remote — eu_offices не используется, офисы не показываются")
         put(t, "country", "none", "goal")
         t["countries"] = []
-        t["remote"] = True
+        put(t, "remote", True, "goal")
+        t["eu_offices"] = False                  # remote only: an office anywhere is not what is wanted
     else:
         if countries:
             put(t, "country", countries[0], "countries")
             t["countries"] = list(countries[1:])
         if goal == "relocate":
-            t["remote"] = False
+            put(t, "remote", False, "goal")
         elif goal == "both":
-            t["remote"] = True
-    if "eu_offices" in sw:
-        t["eu_offices"] = bool(sw["eu_offices"])
+            put(t, "remote", True, "goal")
+        if "eu_offices" in sw:
+            put(t, "eu_offices", bool(sw["eu_offices"]), "eu_offices")
     visa = _choice(sw, "visa", bad)
     if visa:
         put(cand, "needs_visa", visa == "needed", "visa")
@@ -243,10 +246,8 @@ def apply_switches(profile):
         else:
             adj.setdefault(key, size)                 # a number written by hand still sets the size
     ai = _choice(sw, "ai", bad)
-    if ai == "neutral":
-        adj.update(AI_BONUS["neutral"])
-    elif ai:
-        for k, v in AI_BONUS[ai].items():
+    if ai:
+        for k, v in AI_BONUS[ai].items():       # a number written by hand in fit_adjustments wins, as for penalties
             adj.setdefault(k, v)
     if "salary_min" in sw:
         v = sw["salary_min"]

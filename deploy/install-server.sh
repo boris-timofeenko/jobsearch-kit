@@ -21,7 +21,7 @@ esac
 if [ -n "${NEED_TEX:-}" ]; then
   echo "  LaTeX для «CV под вакансию» (~1 ГБ, только первый раз)"
   apt-get install -y -qq --no-install-recommends texlive-latex-base texlive-latex-recommended texlive-latex-extra \
-    texlive-fonts-recommended texlive-fonts-extra texlive-lang-cyrillic >/dev/null
+    texlive-fonts-recommended texlive-fonts-extra texlive-lang-cyrillic lmodern >/dev/null
 fi
 if [ -n "${NEED_LO:-}" ]; then
   echo "  LibreOffice Writer: PDF из DOCX-резюме (~400 МБ, только первый раз)"
@@ -63,4 +63,4 @@ if [ -n "$(envval TELEGRAM_BOT_TOKEN)" ]; then
 fi
 sudo -u jobsearch bash -c "cd $APP && PATH=/home/jobsearch/.local/bin:\$PATH .venv/bin/python -m jobsearch check" || true
 systemctl list-timers --no-pager | grep jobsearch || true
-echo "готово. Первый прогон руками: systemctl start jobsearch.service; лог: tail -f $APP/data/logs/\$(date +%F).log"
+echo "готово. Первый прогон руками: systemctl start --no-block jobsearch.service; лог: tail -f $APP/data/logs/\$(date +%F).log"

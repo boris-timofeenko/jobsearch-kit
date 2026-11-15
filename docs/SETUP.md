@@ -2,12 +2,15 @@
 
 Всё то же самое делает скилл `/jobsearch-setup` в Claude Code за один разговор. Эта инструкция — для тех, кто
 хочет понимать каждый шаг или настраивает без Claude Code. Займёт около часа, из них полчаса на профиль.
+Что происходит с вакансией внутри и почему она могла не прийти — [HOW-IT-WORKS.md](HOW-IT-WORKS.md).
 
-Команды ниже выполняются из папки проекта. `python -m jobsearch` везде означает `.venv/bin/python -m jobsearch`.
+Команды ниже выполняются из папки проекта.
 
 ## 1. Поставить
 
-Нужны Python 3.9 или новее (`python3 --version`) и git. На Mac подходит системный `python3`; если его нет, macOS сама предложит поставить Command Line Tools.
+Нужны Python 3.9 или новее (`python3 --version`) и git. На Mac подходит системный `python3`; если его нет, macOS сама
+предложит поставить Command Line Tools. На Ubuntu и Debian для `venv` нужен пакет `python3-venv`
+(`sudo apt install python3-venv`).
 
 ```bash
 git clone https://github.com/boris-timofeenko/jobsearch-kit ~/jobsearch
@@ -17,7 +20,8 @@ python3 -m venv .venv
 .venv/bin/python -m pytest -q tests
 ```
 
-Последняя строка должна закончиться словом `passed`.
+В конце должно быть «… passed». На системном Python с Mac каждая команда печатает предупреждение `NotOpenSSLWarning`
+— оно безвредно.
 
 На Mac держи проект в `~/jobsearch` или другой папке вне `~/Documents`, `~/Desktop`, `~/Downloads`: в эти три
 папки macOS не пускает фоновые задачи, и расписание (шаг 9) будет молча падать.
@@ -30,8 +34,8 @@ python3 -m venv .venv
 
 `init` спросит роль (ближайший пресет: `qa`, `backend`, `frontend`, `mobile`, `devops`, `data`, `product`) и
 переключатели — короткие ответы про цель, страны, визу, языки, зарплату. Enter оставляет значение в скобках. Появятся
-`my/profile.yaml`, `my/config.yaml`, `my/companies.yaml` и `.env`. Без вопросов, с примером вместо ответов:
-`init --role backend`. Все поля — в [CONFIG.md](CONFIG.md), здесь — что важно.
+`my/profile.yaml`, `my/config.yaml`, `my/companies.yaml` и `.env`. С `--role` вопросов не будет, в профиль ляжет
+пример: `init --role backend`. Все поля — в [CONFIG.md](CONFIG.md), здесь — что важно.
 
 ### Переключатели
 
@@ -61,25 +65,34 @@ switches:
 
 - `visa: not_needed` при гражданстве ЕС/ЕЭЗ: тогда «EU citizens only» и «no visa sponsorship» не мешают, а порог
   визы не применяется.
-- `other_language: flag` — если учишь местный язык: вакансии с требованием языка придут с пометкой, а не пропадут.
-  В Нидерландах и Германии это заметно больше вакансий и оценок модели.
+- `other_language: flag` — если учишь местный язык: английские объявления с требованием этого языка придут с
+  пометкой. Объявления целиком на незнакомом языке по-прежнему отсеиваются; чтобы видеть и их — `any` (в Нидерландах
+  и Германии это вдвое больше вакансий и оценок модели).
 - `salary_min: visa` берёт порог визы из `presets/countries.yaml`. **Пороги — ориентиры на 2026 год**: проверь цифру
   своей визы на официальном сайте и, если отличается, задай свою: `salary_min: 4300` (тогда она действует везде,
   и для remote тоже) или порог одной страны прямо в списке: `countries: [{code: de, salary_floor_month: 4225}, nl]`.
-- `contract: ok`, если B2B или фриланс тебе подходят; `skip`, если нужен только найм в штат.
+- `contract`: `ok`, если B2B или фриланс тебе подходят; `penalize` (по умолчанию) опускает контракты ниже, но явную
+  почасовую ставку и фриланс с работой в офисе отсеивает; `skip` — нужен только найм в штат.
 
 ### Резюме
 
 `switches.cv` — путь к резюме. Положи файл в `my/`:
 
 - **Word или Google Docs** → `my/cv.docx` (в Google Docs: Файл → Скачать → Microsoft Word). Кнопка «CV под вакансию»
-  вернёт его же, переставив буллеты и навыки под вакансию; PDF — если стоит LibreOffice (на сервере ставится сам).
+  вернёт его же, переставив буллеты и навыки под вакансию. PDF получится, если стоит LibreOffice: на сервере он
+  ставится сам, на Mac — `brew install --cask libreoffice`; без него придёт DOCX.
 - **LaTeX** → `my/cv.tex`.
 - **Нет удобного файла** → `my/cv.md` по образцу `presets/cv/example.md`: PDF соберётся по встроенному шаблону.
 - **Только PDF** → для профиля его хватит (из него пишется `candidate.summary`), а для «CV под вакансию» сохрани
   резюме в DOCX или перепиши в Markdown.
 
-Проверить, что нашлось в резюме: `.venv/bin/python -m jobsearch cv --inspect`.
+Для `.tex` и `.md` нужен LaTeX. На сервере его ставит `deploy.sh`. Если бот работает на твоём компьютере: на Mac
+`brew install --cask mactex-no-gui` (около 5 ГБ), на Ubuntu
+`sudo apt install --no-install-recommends texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended lmodern`.
+
+Проверить, что нашлось в резюме: `.venv/bin/python -m jobsearch cv --inspect`. Варианты заголовка, навыки «можно
+добавить под вакансию» и строки про визу — в необязательном `my/cv_bank.yaml`, формат в
+[CONFIG.md](CONFIG.md#mycv_bankyaml).
 
 ### candidate
 
@@ -102,8 +115,8 @@ Java-вакансия тебе подходит «с мелким пробело
 Пресет уже заполнен. Что стоит поправить:
 
 - `strengths` — одна фраза о самых сильных твоих сторонах; модель считает их весомым совпадением.
-- `queries` — названия вакансий для поиска, **самые широкие первыми**: дополнительные страны и remote ищутся только
-  по первым четырём.
+- `queries` — названия вакансий для поиска, **самые широкие первыми**: в обычном прогоне дополнительные страны и
+  remote ищутся только по первым четырём.
 - `stack` — темы из твоего резюме с весами 1–3. Влияют только на порядок и на то, дойдёт ли remote-вакансия до
   модели, ничего не отсекают.
 - `focus` — 1–3 темы, где ты сильнее всего (например, `Payments` или `Kubernetes operators`): плюс к score и к fit.
@@ -118,7 +131,7 @@ Java-вакансия тебе подходит «с мелким пробело
 
 ### Воронка и исключения
 
-- `known_companies.applied` — куда уже откликнулся: такие вакансии помечаются и уходят вниз.
+- `known_companies.applied` — куда уже откликнулся: вакансии этих компаний помечаются и уходят вниз.
 - `exclude_companies` — кого не показывать совсем.
 
 ## 3. Проверить
@@ -127,7 +140,7 @@ Java-вакансия тебе подходит «с мелким пробело
 .venv/bin/python -m jobsearch check --fast
 ```
 
-Покажет роль, страны с порогами, что и где будет искаться, есть ли токены, и список проблем, если они есть.
+Покажет роль, страны, переключатели, что и где будет искаться, есть ли токены, и список проблем, если они есть.
 Потом проверь фильтр заголовков на настоящих названиях — подходящих и соседних:
 
 ```bash
@@ -156,11 +169,22 @@ company_files:
 .venv/bin/python -m jobsearch discover "Mollie" "Personio" "N26"
 ```
 
-Скопируй строки в `my/companies.yaml`. Если компания не нашлась, у неё своя система найма, её вакансии будут
-приходить с LinkedIn.
+Допиши строки в конец `my/companies.yaml` (если в файле есть строка `[]`, удали её). Если компания не нашлась, у
+неё своя система найма или доска на платформе, которую `discover` не перебирает, — её вакансии будут приходить с
+LinkedIn.
 
-Агрегаторы по умолчанию годятся всем. Для Нидерландов добавь `iamexpat` и `undutchables`, для Германии
-`arbeitsagentur`; бесплатные ключи Adzuna (developer.adzuna.com) включают ещё один источник по основной стране.
+Агрегаторы по умолчанию годятся всем. Список в `my/config.yaml` заменяет общий целиком, поэтому, чтобы добавить
+местные (`iamexpat` и `undutchables` для Нидерландов, `arbeitsagentur` для Германии), выпиши весь:
+
+```yaml
+aggregators: [arbeitnow, landingjobs, himalayas, remotive, remoteok, workingnomads, weworkremotely, themuse, jobicy,
+              adzuna, workable_search, iamexpat, undutchables]
+```
+
+При `goal: relocate` remote-агрегаторы (Remotive, RemoteOK, We Work Remotely, Working Nomads, Himalayas, Jobicy)
+выключаются сами, но только пока своего списка нет — в своём не пиши их. Бесплатные ключи Adzuna
+(developer.adzuna.com) в `.env` включают ещё один источник по основной стране (Adzuna есть не везде: из каталога —
+nl, de, be, fr, es, at, it, pl).
 
 ## 5. Telegram-бот
 
@@ -187,7 +211,8 @@ company_files:
   вход в браузере и **скопируй токен руками** (начинается с `sk-ant-oat01-`, длина 108 символов) в `.env`:
   `CLAUDE_CODE_OAUTH_TOKEN=`. Не вырезай его скриптом из вывода терминала: в строку попадают управляющие символы и
   токен портится.
-- **API-ключ** с console.anthropic.com в `ANTHROPIC_API_KEY=`. Одна оценка — около цента.
+- **API-ключ** с console.anthropic.com в `ANTHROPIC_API_KEY=`. Одна оценка — около цента. Если задан ключ, подписка
+  не используется.
 
 `.venv/bin/python -m jobsearch check` (без `--fast`) покажет, какой вариант подхватился.
 
@@ -200,17 +225,18 @@ Opus в `my/config.yaml`: `llm: {model_cli_country: opus}`.
 .venv/bin/python -m jobsearch run --time-filter r259200
 ```
 
-Ищет за последние 3 дня, идёт 15–40 минут (LinkedIn отвечает медленно, это нормально). Telegram в первом
-прогоне не пишет, флаг `--notify` включает отправку. Потом:
+Ищет за последние 3 дня, обычно 20–40 минут; если LinkedIn в этот день ограничивает запросы, до полутора часов.
+Telegram в первом прогоне не пишет, флаг `--notify` включает отправку. Потом:
 
 ```bash
-.venv/bin/python -m jobsearch report --hours 72    # → data/reports/latest.html
+.venv/bin/python -m jobsearch report --hours 72               # → data/reports/latest.html
 .venv/bin/python -m jobsearch report --hours 72 --unchecked   # если модель ещё не подключена
-open data/reports/latest.html                      # Linux: xdg-open
+open data/reports/latest.html                                 # Linux: xdg-open
 ```
 
 В отчёте только то, что прошло модель с fit ≥ 4, по трекам. У каждой вакансии — заметка модели и пометки:
-почему fit такой, что проверить. Пример карточек в Telegram:
+почему fit такой, что проверить. Если модель подключилась после прогона, `assess --days 3` оценит уже собранное;
+такие вакансии видны в отчёте, а в Telegram не уходят. Пример карточек в Telegram:
 
 ```bash
 .venv/bin/python -m jobsearch telegram-test --sample 3
@@ -224,26 +250,34 @@ open data/reports/latest.html                      # Linux: xdg-open
 .venv/bin/python -m jobsearch list --all --hours 72 --limit 300
 ```
 
-У каждой вакансии видны score, трек и причины. Типичные исправления:
+У каждой вакансии видны score, трек и причины (все причины — в [HOW-IT-WORKS.md](HOW-IT-WORKS.md#4-отсев-и-пометки)).
+Типичные исправления:
 
 | видишь | правишь |
 |---|---|
-| нужная вакансия отсеяна «заголовок…» или её нет вовсе | `title_include` |
+| нужной вакансии нет в базе вовсе | `title_include` (проверь `check --title "…"`) или добавь компанию через `discover` |
+| отсеяна «заголовок на немецком» / «текст на …» / «нужен … язык» | `switches.languages`; `other_language: flag` или `any` |
 | в отчёте чужая роль | `title_exclude` и `not_this_role` |
-| «нужен другой язык», а ты его знаешь | `switches.languages`; учишь его — `other_language: flag` |
 | «зарплата … < порога» | `switches.salary_min` |
-| хорошая вакансия с низким fit | `summary`, `strengths`, `small_gap`; почитай `note` модели |
+| хорошая вакансия с низким fit | `summary`, `strengths`, `small_gap`; почитай заметку модели |
 | вакансия в стране, которую ты бы рассмотрел, внизу | добавить страну в `switches.countries` |
 
 После правок:
 
 ```bash
 .venv/bin/python -m jobsearch check --fast
-.venv/bin/python -m jobsearch reanalyze      # пересчитать всё уже собранное; оценки модели сохраняются
-.venv/bin/python -m jobsearch assess --days 3  # оценить моделью то, что собрано без неё
+.venv/bin/python -m jobsearch reanalyze                  # пересчитать всё собранное; оценки модели сохраняются
+.venv/bin/python -m jobsearch assess --again --days 3    # если правил summary/роль: переоценить моделью
 ```
 
+`reanalyze` прячет вакансии, чей заголовок после правки фильтра больше не проходит, а `reanalyze --prune` удаляет их
+из базы (кроме тех, где ты уже нажимал кнопку). Оценки модели `reanalyze` не пересчитывает — для этого `assess
+--again`, он тратит подписку, поэтому только за указанный период.
+
 ## 9. Расписание
+
+Выбери одно место: компьютер или сервер. Два расписания с одним ботом мешают друг другу — второй бот перехватывает
+нажатия кнопок.
 
 ### Mac
 
@@ -261,39 +295,57 @@ scripts/install_launchd.sh 9 13 18 --bot
 
 ```
 5 9,13,18 * * * /home/anna/jobsearch/scripts/run-local.sh
-@reboot cd /home/anna/jobsearch && PATH=$HOME/.local/bin:$PATH .venv/bin/python -m jobsearch bot >> data/logs/bot.log 2>&1
+@reboot cd /home/anna/jobsearch && mkdir -p data/logs && PATH=$HOME/.local/bin:$PATH .venv/bin/python -m jobsearch bot >> data/logs/bot.log 2>&1
 ```
 
-`PATH` с `~/.local/bin` нужен боту, чтобы найти `claude` для кнопки «CV под вакансию».
-
+`PATH` с `~/.local/bin` нужен боту, чтобы найти `claude` для кнопки «CV под вакансию». Строка `@reboot` запускает
+бота только после перезагрузки; сейчас — той же командой с `&` в конце. Если бот упал, cron его не поднимет:
+перезапусти руками или перенеси всё на сервер.
 
 ### Свой сервер (VPS)
 
 Подойдёт любой VPS с Ubuntu 22.04+ или Debian 12 и 2 ГБ памяти (Hetzner CX22 ~€4 в месяц). Нужен вход по
-SSH-ключу под root:
+SSH-ключу под root. Удобнее всего завести для сервера короткое имя — тогда все команды ниже работают без лишних флагов:
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_vps        # если ключа ещё нет
-ssh-copy-id -i ~/.ssh/id_ed25519_vps root@<ip>       # или добавь ключ при создании сервера
-SSH_KEY=~/.ssh/id_ed25519_vps deploy/deploy.sh root@<ip>
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_vps         # если ключа ещё нет
+ssh-copy-id -i ~/.ssh/id_ed25519_vps root@<ip>        # или добавь ключ при создании сервера
+cat >> ~/.ssh/config <<EOF
+
+Host jobsearch-vps
+  HostName <ip>
+  User root
+  IdentityFile ~/.ssh/id_ed25519_vps
+EOF
+deploy/deploy.sh jobsearch-vps
 ```
 
-`deploy.sh` копирует проект вместе с `my/` и `.env` в `/opt/jobsearch`, ставит Python-окружение и тесты, Claude
-CLI (если в `.env` есть `CLAUDE_CODE_OAUTH_TOKEN`), LaTeX или LibreOffice (по формату резюме) и systemd: прогоны каждые два
-часа с 08:15 до 22:15, глубокий ночью в 00:15, бот — постоянно. Часовой пояс — `JOBSEARCH_TZ` в `.env`. Ночные
-сообщения приходят без звука.
+`deploy.sh` копирует проект вместе с `my/` и `.env` в `/opt/jobsearch` и ставит:
 
-Если уже были прогоны на компьютере, перенеси базу, иначе первый серверный прогон пришлёт всё найденное заново:
+- Python-окружение, прогоняет тесты;
+- Claude CLI, если в `.env` есть `CLAUDE_CODE_OAUTH_TOKEN`, а `ANTHROPIC_API_KEY` пуст;
+- LaTeX или LibreOffice — по формату резюме;
+- systemd: прогоны каждые два часа с 08:15 до 22:15, глубокий ночью в 00:15, бот — постоянно (если в `.env` есть
+  токен бота).
+
+Часовой пояс — `JOBSEARCH_TZ` в `.env`. Ночные сообщения приходят без звука.
+
+**Если уже были прогоны на компьютере**, сначала сними там расписание (`scripts/install_launchd.sh --remove` или
+строки из `crontab -e`, и останови бота), потом перенеси базу — иначе первый серверный прогон пришлёт всё найденное
+заново:
 
 ```bash
-scp data/jobs.db root@<ip>:/opt/jobsearch/data/
-ssh root@<ip> 'chown jobsearch:jobsearch /opt/jobsearch/data/jobs.db'
+deploy/deploy.sh jobsearch-vps --with-db
 ```
+
+`--with-db` снимает копию базы безопасно даже при работающем боте, на время копирования останавливает бота и
+таймеры на сервере и запускает их снова. Без флага база на сервере не трогается.
 
 На сервере:
 
 ```bash
-systemctl start jobsearch.service                      # прогон сейчас
+ssh jobsearch-vps
+systemctl start --no-block jobsearch.service           # прогон сейчас, не дожидаясь конца
 tail -f /opt/jobsearch/data/logs/$(date +%F).log       # лог
 systemctl list-timers | grep jobsearch                 # расписание
 journalctl -u jobsearch-bot -f                         # бот
@@ -303,13 +355,17 @@ journalctl -u jobsearch-bot -f                         # бот
 
 ## 10. Каждый день
 
-- Карточки приходят в Telegram. Кнопки: ✅ Откликнулся, ⏳ Позже, 🙈 Скрыть (сворачивает карточку).
-- `/applied`, `/later`, `/interview` — списки; `/stats` — сколько всего; `/mark <id> rejected` — любой статус.
+- Карточки приходят в Telegram. Кнопки: ✅ Откликнулся, ⏳ Позже, 🙈 Скрыть (сворачивает карточку в одну строку с
+  кнопкой «Вернуть»).
+- `/applied`, `/later`, `/interview` — списки; `/stats` — сколько всего; `/mark <id> rejected` — любой статус;
+  `/cv <id>` — то же, что кнопка «CV под вакансию».
 - «📄 CV под вакансию» присылает резюме, подстроенное под вакансию: тот же файл из `switches.cv` (DOCX, LaTeX или
-  Markdown) с переставленными буллетами и навыками и отчётом, что изменено. По желанию — `my/cv_bank.yaml` с
-  вариантами заголовков и синонимами (формат — в `AGENTS.md`, раздел «CV под вакансию»).
-- Изменилась цель (другая страна, отказ от контрактов) — правь профиль, `check --fast`, `reanalyze`, на сервере
-  ещё `deploy/deploy.sh`.
+  Markdown) с переставленными буллетами и навыками и отчётом, что изменено.
+- Изменилась цель (другая страна, отказ от контрактов) — правь профиль, `check --fast`, `reanalyze`. Если всё
+  работает на сервере, после правки — `deploy/deploy.sh jobsearch-vps`, а `reanalyze` там:
+  ```bash
+  ssh jobsearch-vps 'sudo -u jobsearch bash -c "cd /opt/jobsearch && .venv/bin/python -m jobsearch reanalyze"'
+  ```
 
 ## 11. Обновить код
 
@@ -317,19 +373,23 @@ journalctl -u jobsearch-bot -f                         # бот
 git pull
 .venv/bin/pip install -q -r requirements.txt
 .venv/bin/python -m pytest -q tests
-deploy/deploy.sh root@<ip>          # если на сервере
+deploy/deploy.sh jobsearch-vps          # если на сервере
 ```
+
+`my/`, `.env` и `data/` обновление не трогает.
 
 ## Если что-то не так
 
 | проблема | что делать |
 |---|---|
 | `настройка: нет my/profile.yaml` | шаг 2 |
-| `LLM: недоступен` | шаг 6; на сервере `sudo -u jobsearch /home/jobsearch/.local/bin/claude -p ok` должен ответить |
+| `настройка: …companies.yaml: YAML не разбирается` | в `my/companies.yaml` осталась строка `[]` перед дописанными компаниями — удали её |
+| `LLM: недоступен` | шаг 6; на сервере проверь так: `ssh jobsearch-vps 'sudo -u jobsearch bash -c "cd /opt/jobsearch && set -a && . ./.env && ~/.local/bin/claude -p ok"'` — должно ответить |
+| `Not logged in` в этой проверке | токен скопирован не целиком: заново `claude setup-token`, вставить руками, `deploy/deploy.sh jobsearch-vps` |
 | в логе много `429` от LinkedIn | это волны ограничений на его стороне, бывают по 1–3 дня; следующие прогоны догонят пропущенное сами |
-| `Not logged in` у `claude` на сервере | токен скопирован не целиком: заново `claude setup-token`, вставить руками |
 | расписание на Mac не запускается | проект лежит в `~/Documents` или подобной папке — перенеси, пересоздай `.venv`, переустанови расписание |
-| «CV под вакансию» не меняет DOCX | `cv --inspect`: если разделы не нашлись, задай их названия в `my/cv_bank.yaml` → `docx:` (CONFIG.md, «Резюме») |
-| бот не реагирует на кнопки | на сервере `systemctl status jobsearch-bot`; на Mac `scripts/install_launchd.sh … --bot` |
-| в Telegram ничего | пустой дайджест — нормально; `list --last-run` покажет, что нашлось и почему не прошло |
-| `database is locked` | два прогона одновременно; на сервере это исключено, на компьютере не запускай `run` руками, пока идёт плановый |
+| «CV под вакансию» не меняет DOCX | `cv --inspect`: если разделы не нашлись, добавь их названия в `my/cv_bank.yaml` → `docx:` (CONFIG.md, «Резюме») |
+| «CV под вакансию» падает с `pdflatex не установлен` | резюме `.tex` или `.md`, а LaTeX нет — шаг 2, «Резюме». На Mac, если LaTeX стоит, переустанови расписание (`scripts/install_launchd.sh … --bot`): бот из старой версии скрипта не знал путь `/Library/TeX/texbin` |
+| бот не реагирует на кнопки | на сервере `systemctl status jobsearch-bot`; на Mac `scripts/install_launchd.sh … --bot`; не запущен ли второй бот на другом компьютере |
+| в Telegram ничего | пустой дайджест — нормально; `list --last-run --all` покажет, что нашлось и почему не прошло |
+| `database is locked` | база занята другим процессом подольше 30 секунд: `run` руками, пока идёт плановый, или `reanalyze` во время прогона |

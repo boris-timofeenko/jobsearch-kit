@@ -15,7 +15,8 @@ switches:
   level: senior                 # junior · mid · senior · lead
   salary_min: visa              # visa — порог визы страны · число — свой минимум, €/мес гросс · 0 — не отсекать
   salary_target: 6000           # желаемый, €/мес гросс: выше — вакансия выше в списке
-  contract: penalize            # B2B, фриланс, почасовая ставка: skip — отсеять · penalize — ниже в списке · ok
+  contract: penalize            # B2B, фриланс, почасовая ставка: skip — отсеять · penalize — ниже в списке (явную
+                                #   почасовую ставку и фриланс в офисе отсеивает) · ok
   outsourcing: penalize         # аутсорс и аутстафф (EPAM, Luxoft…): skip · penalize · ok
   agencies: penalize            # рекрутер, работодатель не назван: skip · penalize · ok
   public_sector: skip           # госсектор, оборонка, допуск: skip · ok
@@ -48,7 +49,7 @@ target:
   fit_adjustments:
     sponsorship_yes: 2          # виза обещана явно
     relocation_yes: 1           # помощь с переездом без слова «виза»
-  # Порог страны своей цифрой: country: {code: de, salary_floor_month: 4225} вместо кода в switches.countries
+  # Порог страны своей цифрой — словарём прямо в switches.countries: [{code: de, salary_floor_month: 4225}, nl]
   # location_penalty: {nl: -1, de: 1, eu: 2, remote_nl: 2, remote: 3, other: 3}   # по умолчанию считается сам
 
 # Компании, где ты уже в процессе: в отчёте пометка «уже в воронке», applied/rejected опускаются вниз.

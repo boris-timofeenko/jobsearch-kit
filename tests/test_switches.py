@@ -215,3 +215,74 @@ def test_remote_search_in_the_home_country():
     assert locs[-1] == {"name": "Poland", "remote": True, "max_pages": 30, "queries": p["role"]["queries"][:4]}
     assert "Poland" not in [l["name"] for l in config.default_linkedin_locations(use(goal="relocate", based_in="Poland"))]
     assert [l["name"] for l in config.default_linkedin_locations(use(goal="both", based_in="Georgia"))][-1] == "European Union"
+
+
+def test_remote_only_goal_hides_offices_everywhere():
+    p = use(goal="remote", eu_offices=True)
+    assert not p["prefs"]["eu_offices"] and any("eu_offices не используется" in n for n in p["_notes"])
+    assert f.analyze(job(location="Madrid, Spain"), None, {}).verdict == "other"
+
+
+def test_residency_wording_for_where_the_candidate_lives():
+    use(based_in="Poland")
+    for text in ("Only for candidates residing in Poland.", "You must currently live in Poland.",
+                 "Open to residents of Poland only."):
+        j = f.analyze(job(location="Remote - Europe", remote=True, description=("Python, FastAPI. " + text + " ") * 5),
+                      None, {})
+        assert j.verdict == "live", (text, j.reasons)
+        assert any(r.startswith("ты живёшь в Poland") for r in j.reasons)
+    j = f.analyze(job(location="Remote - Europe", remote=True,
+                      description="Python. Only for candidates residing in Portugal. " * 5), None, {})
+    assert j.verdict == "skip"
+
+
+def test_eu_citizen_and_an_eu_only_quote_from_the_model():
+    use(visa="not_needed", based_in="Spain")
+    j = job(track="remote", verdict="live", score=60, reasons=[], location="Remote - EU")
+    llm.apply_assessment(j, llm.Assessment(fit=7, residency_restriction="EU citizens only"))
+    assert j.verdict == "live", j.reasons
+    j = job(track="remote", verdict="live", score=60, reasons=[], location="Remote - EU")
+    llm.apply_assessment(j, llm.Assessment(fit=7, residency_restriction="Candidates must be based in Germany"))
+    assert j.verdict == "skip"
+
+
+def test_hand_set_numbers_win_over_the_ai_switch_and_penalties_always_apply():
+    p = yaml.safe_load((ROOT / "presets" / "profile.example.yaml").read_text())
+    p.update(yaml.safe_load((ROOT / "presets" / "roles" / "backend.yaml").read_text()))
+    p["switches"]["ai"] = "neutral"
+    p["target"]["fit_adjustments"]["ai_first"] = 3
+    config.normalize_profile(p)
+    llm.configure(p)
+    assert llm.FIT_ADJ["ai_first"] == 3
+    use(ai="avoid")
+    j = job(track="de", verdict="live", score=60, reasons=[])
+    llm.apply_assessment(j, llm.Assessment(fit=4, ai_role="ai_first"))       # weak match, still penalised
+    assert any("-2 AI-first" in r for r in j.reasons), j.reasons
+
+
+def test_empty_title_lists_mean_empty():
+    p = yaml.safe_load((ROOT / "presets" / "profile.example.yaml").read_text())
+    p.update(yaml.safe_load((ROOT / "presets" / "roles" / "devops.yaml").read_text()))
+    p["role"]["title_exclude"] = []
+    p["role"]["stack"] = {}
+    config.normalize_profile(p)
+    f.configure(p)
+    assert f.is_relevant_title("Senior DevOps Engineer")        # the QA exclusions (devops, sre…) are gone
+    assert f.STACK == []
+
+
+def test_clashes_with_goal_and_eu_offices_are_noted():
+    p = yaml.safe_load((ROOT / "presets" / "profile.example.yaml").read_text())
+    p.update(yaml.safe_load((ROOT / "presets" / "roles" / "backend.yaml").read_text()))
+    p["switches"].update(goal="relocate", eu_offices=False)
+    p["target"].update(remote=True, eu_offices=True)
+    config.normalize_profile(p)
+    assert any("switches.goal перекрывает remote" in n for n in p["_notes"])
+    assert any("switches.eu_offices перекрывает eu_offices" in n for n in p["_notes"])
+
+
+def test_companies_example_takes_appended_lines(tmp_path):
+    f_ = tmp_path / "companies.yaml"
+    f_.write_text((ROOT / "presets" / "companies.example.yaml").read_text()
+                  + '- {name: "Mollie", ats: ashby, slug: mollie}   # 48 jobs\n')
+    assert config.load_companies([str(f_)]) == [{"name": "Mollie", "ats": "ashby", "slug": "mollie"}]

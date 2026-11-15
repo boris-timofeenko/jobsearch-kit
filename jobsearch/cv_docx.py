@@ -139,7 +139,8 @@ def parse(path, bank=None):
     ps = paragraphs(doc)
     texts = [text_of(p) for p in ps]
     hints = bank.get("docx") or {}
-    rx = {k: re.compile(rf"^\W*({hints.get(k) or v})\W*$", re.I) for k, v in SECTIONS.items()}
+    rx = {k: re.compile(rf"^\W*({v}" + (f"|{hints[k]}" if hints.get(k) else "") + r")\W*$", re.I)
+          for k, v in SECTIONS.items()}                  # own names are added to the usual ones
     other = re.compile(rf"^\W*({OTHER})\W*$", re.I)
     headlines = {cvgen.norm(h): h for h in bank.get("headlines") or []}
     rel = ((bank.get("relocation") or {}).get("default") or {})
