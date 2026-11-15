@@ -50,7 +50,8 @@ jobsearch/
   sources/        linkedin.py (гостевой поиск), ats.py (ATS и корпоративные сайты), aggregators.py,
                   expat_boards.py (iamexpat, undutchables), hc_chrome.py (резервный транспорт hiring.cafe),
                   telegram.py (каналы и группы Telegram: веб-просмотр, Telethon, разбор постов моделью),
-                  habr.py (Хабр Карьера: лента по дате, описание из schema.org JobPosting)
+                  habr.py (Хабр Карьера: лента по дате, описание из schema.org JobPosting),
+                  stubs.py (заглушки досок, которые сейчас не прочитать: hh, superjob, getmatch, geekjob)
   db.py           SQLite: jobs, coverage (когда поиск LinkedIn последний раз дошёл до конца), tg_posts (посты каналов)
   http.py         requests.Session: темп, повтор после 429, счётчики ответов
   report.py       markdown/html отчёты, карточки Telegram, подписи и порядок треков
@@ -95,6 +96,18 @@ LinkedIn — штат США, Сербия и Казахстан дают мес
 без своего `aggregators` добавляются доски стран (`config.country_aggregators`: поле `aggregators` у целевых стран
 и у страны `based_in`, сейчас `habr` у России, Беларуси, Казахстана).
 
+**Формат работы.** `switches.work_modes` (`config.WORK_MODES`: remote, hybrid, onsite; `office`/`on-site` — синонимы
+onsite) → `target.work_modes` и `prefs.work_modes`, без переключателя — все три. Без remote `target.remote` = false:
+remote-треки уходят в `other` («remote, а в work_modes его нет»), LinkedIn не ищет remote, remote-доски выключаются.
+Без hybrid и onsite `offices` обнуляется. До модели (`filters.analyze`) режется только при `[remote]`: ни
+`job.remote` у источника, ни слов `REMOTE_TEXT` (remote, work from home, удалённо, дистанционно) в тексте и локации —
+«отсев по настройке: нужен remote, а в вакансии о нём ни слова»; на Хабре за 3 дня так отсеялись 6 вакансий без
+пометки «можно удалённо». После модели (`apply_assessment`) `work_mode` не из списка — отсев «отсев по настройке:
+офис, а нужен remote», `unknown` — пометка. hiring.cafe получает `workplace_types` только из списка (и делит выдачу
+только внутри него). Гостевой поиск LinkedIn игнорирует `f_WT` (проверка 16.11: с 1, 2 и 3 одни и те же 10 карточек
+в том же порядке, и в «European Union» remote — офисы в Мюнхене и Праге), поэтому `remote=True` у вакансии из
+remote-поиска LinkedIn значит «нашлась в remote-поиске», а не «remote»: формат решает модель.
+
 **Валюты.** Всё внутри — евро в месяц. `switches.salary_currency` (по умолчанию EUR) говорит, в какой валюте
 `salary_min`/`salary_target`; `apply_switches` пересчитывает их по `currency_rates` из `config.yaml` (курс ЦБ РФ на
 14.11.2026, евро за единицу) и кладёт курсы в `prefs.rates`. `filters.parse_salary` читает евро прежней регуляркой
@@ -109,14 +122,14 @@ QA-значения, с которыми модули стартуют (`title_e
 `JOBSEARCH_MY` / `JOBSEARCH_DATA` переносят `my/` и `data/` (тесты используют `tests/fixtures/my` и временную папку).
 
 **Переключатели.** `switches` в начале профиля — короткие ответы (варианты — `config.SWITCH_VALUES`; `countries`,
-`offices` (старое `eu_offices: true/false` = `[eu]`/`[]`), `based_in`, `languages`, `salary_currency`, `salary_min`,
+`offices` (старое `eu_offices: true/false` = `[eu]`/`[]`), `work_modes`, `based_in`, `languages`, `salary_currency`, `salary_min`,
 `salary_target`, `cv` разбираются отдельно); `config.apply_switches`
 раскладывает их в `candidate`, `target`, `target.fit_adjustments` и `profile["prefs"]` до нормализации стран.
 Переключатель главнее такого же поля ниже, расхождение попадает в `profile["_notes"]` и печатается `check`; неверное
 значение — в `_problems`. Без блока действуют `config.DEFAULT_PREFS` — поведение, на котором калибровались правила
 (регрессия 15.11 на снимке боевой базы, 34 678 вакансий: профиль без `switches` даёт тот же результат, что опубликованная версия, до строки; `other_language: flag` + `contract: ok` на тех же данных открывают 1 428 отсеянных, из них с fit модели ≥ 4 — 98).
 `filters.configure` держит переключатели в `LANG_MODE`, `CONTRACT`, `AGENCIES`, `OUTSOURCING`, `PUBLIC_SECTOR`,
-`SALARY_MIN`, `REMOTE_OK`, `OFFICES` (регэксп), `REMOTE_ZONES`, `EU_CITIZEN`, `CURRENCY`, `RATES`;
+`SALARY_MIN`, `REMOTE_OK`, `WORK_MODES`, `OFFICES` (регэксп), `REMOTE_ZONES`, `EU_CITIZEN`, `CURRENCY`, `RATES`;
 `llm.apply_assessment` читает их оттуда. Отсев по переключателю подписан
 `filters.SETTING` («отсев по настройке: …»), пометка вместо отсева начинается не со слова из `llm.SKIP_PREFIXES`
 («язык: нужен …», «ставка …», «ты живёшь в …», «не по роли: …»), иначе `rescuable` приняла бы её за отсев. Трек,
@@ -382,10 +395,13 @@ Mayflower в 244 символа не доходил до оценки (нужн�
 3 дня 32 вакансии по роли, у 31 полное описание; модель (Sonnet на сервере) поставила Python-вакансиям 9, Go и Java —
 2–6 как чужой стек.
 
-Не подключены: hh.ru — с апреля 2026 анонимный `GET /vacancies` отвечает 403, токен приложения дают подтверждённым
-работодателям после модерации, сайт за DDoS-Guard с капчей; GetMatch и Geekjob — данные только из `/api/`, `/json/`,
-закрытых в их robots.txt (у обоих есть Telegram-каналы, их читает `tg_channels`); SuperJob — нужен ключ приложения,
-IT-вакансий мало; «Работа России» (opendata.trudvsem.ru) открыта, но на «тестировщик» по всей стране 81 вакансия.
+Заглушки (`sources/stubs.py`, в `AGGREGATORS` под своими именами, у ru в каталоге уже в `aggregators`, у by/kz —
+`hh`): `collect` пишет «<имя>: заглушка, вакансий нет — <причина>» и идёт дальше, `check` помечает «(заглушка)».
+Настоящий источник заменяет заглушку под тем же именем. hh.ru — с апреля 2026 анонимный `GET /vacancies` отвечает
+403, токен приложения дают подтверждённым работодателям после модерации, сайт за DDoS-Guard с капчей; SuperJob —
+нужен ключ приложения (регистрация человека на api.superjob.ru), IT-вакансий мало; GetMatch и Geekjob — данные
+только из `/api/`, `/json/`, закрытых в их robots.txt (у обоих есть Telegram-каналы, их читает `tg_channels`).
+«Работа России» (opendata.trudvsem.ru) открыта, но на «тестировщик» по всей стране 81 вакансия — не подключена.
 
 ## hiring.cafe
 

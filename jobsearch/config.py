@@ -158,6 +158,10 @@ SWITCH_VALUES = {
 # What the code does without a switch: the behaviour the rules were calibrated with
 DEFAULT_PREFS = {"other_language": "skip", "contract": "penalize", "outsourcing": "penalize", "agencies": "penalize",
                  "public_sector": "skip", "remote": True, "salary_min": None, "currency": "EUR"}
+# switches.work_modes: which formats of work the person takes; without the switch — all three
+WORK_MODES = ("remote", "hybrid", "onsite")
+WORK_MODE_ALIASES = {"office": "onsite", "on-site": "onsite", "on_site": "onsite", "in-office": "onsite"}
+WORK_MODE_RU = {"remote": "remote", "hybrid": "гибрид", "onsite": "офис"}
 # switches.offices: offices outside the target countries that count as a move (the `region` track). A region name, a
 # catalog country code, or `world`. Each region is a list of parts of the world (filters.PART_WORDS + catalog `part`).
 REGIONS = {"eu": ("ЕС", ["eu"]), "europe": ("Европа", ["eu", "europe"]), "cis": ("СНГ и Кавказ", ["cis"]),
@@ -190,6 +194,25 @@ def offices_names(target):
     cat = {**catalog(), **{c["code"]: c for c in own}}
     return ", ".join(REGIONS[o][0] if o in REGIONS else cat.get(o, {}).get("label", o).split(" ", 1)[-1]
                      for o in target.get("offices") or [])
+
+
+def work_modes_list(v, problems):
+    """switches.work_modes as an ordered subset of WORK_MODES; None when the switch is absent or nothing in it is
+    valid (then every format is taken)."""
+    if v is None:
+        return None
+    items = v if isinstance(v, list) else re.split(r"[,\s]+", str(v))
+    out = []
+    for x in (str(i).strip().lower() for i in items):
+        x = WORK_MODE_ALIASES.get(x, x)
+        if x and x not in WORK_MODES:
+            problems.append(f"switches.work_modes: {x!r}, нужно из: {', '.join(WORK_MODES)}")
+        elif x:
+            out.append(x)
+    if not out:
+        problems.append("switches.work_modes пуст: берутся все форматы")
+        return None
+    return [m for m in WORK_MODES if m in out]
 
 
 def offices_list(v):
@@ -245,6 +268,11 @@ def apply_switches(profile, rates=None):
             if old is not None and old != offices_list(offices):
                 notes.append(f"switches.offices перекрывает offices: {old!r} → {offices_list(offices)!r}")
             t["offices"] = offices_list(offices)
+    modes = work_modes_list(sw.get("work_modes"), bad)
+    if modes is not None:
+        if goal == "remote" and "remote" not in modes:
+            bad.append("switches.work_modes без remote, а goal: remote — искать нечего")
+        t["work_modes"] = modes
     visa = _choice(sw, "visa", bad)
     if visa:
         put(cand, "needs_visa", visa == "needed", "visa")
@@ -327,7 +355,13 @@ def normalize_profile(profile, rates=None):
     if "offices" not in t:      # an old long-form profile: eu_offices; otherwise the EU when the move is to the EU
         t["offices"] = (offices_list(t["eu_offices"]) if "eu_offices" in t else
                         ["eu"] if not t.get("primary") or in_eu(t["primary"]) else [])
-    prefs["offices"] = t["offices"]
+    t["work_modes"] = t.get("work_modes") or list(WORK_MODES)
+    if "remote" not in t["work_modes"]:         # no remote work: no remote track, searches or remote-only boards
+        t["remote"] = False
+    if t["offices"] and not {"hybrid", "onsite"} & set(t["work_modes"]):
+        profile["_notes"].append("switches.offices не используется: в work_modes только remote")
+        t["offices"] = []
+    prefs["offices"], prefs["work_modes"] = t["offices"], t["work_modes"]
     prefs["rates"] = {str(k).upper(): float(v) for k, v in (rates or {}).items()}
     prefs["remote"] = bool(profile["target"].get("remote", True))
     if prefs["salary_min"] is None and not profile["candidate"].get("needs_visa", True):

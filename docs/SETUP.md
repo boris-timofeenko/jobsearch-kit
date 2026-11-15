@@ -44,6 +44,7 @@ python3 -m venv .venv
 ```yaml
 switches:
   goal: both                    # relocate — только переезд · remote — только удалёнка · both
+  work_modes: [remote, hybrid, onsite]   # формат: remote · hybrid · onsite
   countries: [de, nl]           # страны переезда, первая — основная (коды из presets/countries.yaml)
   offices: [eu]                 # офис в других странах региона: eu · europe · cis · middle_east · world · коды · none
   visa: needed                  # not_needed — есть гражданство или ВНЖ в этих странах
@@ -69,6 +70,10 @@ switches:
   опиши её прямо в профиле: `countries: [{code: br, name: Brazil, location_regex: '\b(brazil|são paulo|sao paulo)',
   part: americas}]`. `part` — часть света (eu, europe, cis, middle_east, americas, asia): по ней решается, какие
   remote-вакансии тебе доступны.
+- `work_modes` — формат работы: `remote`, `hybrid`, `onsite`, любые сочетания. Только `[remote]` — до модели
+  отсеиваются вакансии, где об удалёнке ни слова, после модели — те, что она признала офисом или гибридом. Без
+  `remote` — LinkedIn не ищет remote, remote-доски выключаются, remote-вакансии не показываются. Сам LinkedIn формат
+  фильтровать не умеет (гостевой поиск игнорирует этот фильтр), поэтому формат решают текст и модель.
 - `offices` — офис или гибрид в странах, которые не в `countries`, но куда тоже готов переехать: регион (`eu`,
   `europe`, `cis` — СНГ и Кавказ, `middle_east`, `americas`, `asia`), коды стран (`[rs, ae]`), `world` или `none`.
   Без этой строки — `eu`, если основная страна в ЕС, иначе `none`.

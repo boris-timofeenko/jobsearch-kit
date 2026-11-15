@@ -166,7 +166,7 @@ def test_init_wizard_writes_answers_into_switches(tmp_path, monkeypatch):
     from jobsearch import cli
     cv = tmp_path / "Anna CV.docx"
     cv.write_bytes(b"PK fake docx")
-    answers = iter(["data", "relocate", "de, es", "none", "not_needed", "Spain", "English, Spanish, German", "flag", "",
+    answers = iter(["data", "relocate", "hybrid, onsite", "de, es", "none", "not_needed", "Spain", "English, Spanish, German", "flag", "",
                     "", "4500", "", "ok", "", "skip", "", "prefer", str(cv)])
     monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
     monkeypatch.setattr(config, "MY", tmp_path / "my")
@@ -181,6 +181,7 @@ def test_init_wizard_writes_answers_into_switches(tmp_path, monkeypatch):
     p = yaml.safe_load(text)
     sw = p["switches"]
     assert (sw["goal"], sw["countries"], sw["offices"], sw["visa"]) == ("relocate", ["de", "es"], [], "not_needed")
+    assert sw["work_modes"] == ["hybrid", "onsite"]
     assert (sw["languages"], sw["other_language"], sw["level"], sw["salary_min"]) == (
         ["English", "Spanish", "German"], "flag", "senior", 4500)
     assert (sw["contract"], sw["agencies"], sw["ai"], sw["cv"]) == ("ok", "skip", "prefer", "my/cv.docx")
@@ -307,7 +308,7 @@ def test_friend_moving_within_russia_reads_russian_postings_in_roubles():
     assert (moscow.track, moscow.verdict, moscow.lang) == ("ru", "live", "ru"), moscow.reasons
     assert kazan.reasons[0] == "зарплата ~150 000 ₽/мес < порога 200 000 ₽ (свой минимум)"
     assert f.analyze(job(location="Madrid, Spain"), None, {}).track == "other"    # by default no EU offices for Russia
-    assert config.country_aggregators(p) == ["habr"]
+    assert config.country_aggregators(p) == ["habr", "hh", "superjob", "getmatch", "geekjob"]
     assert "Рабочая виза в целевых странах кандидату не нужна" in llm.SYSTEM and "ЕС" not in llm.GOAL
 
 
@@ -338,3 +339,24 @@ def test_living_in_the_job_city_outside_the_eu_is_not_a_blocker():
     use(countries=["ae"])
     assert not f.residency_blocks("Candidates must be based in Dubai", "ae", "Dubai, United Arab Emirates")
     assert f.residency_blocks("Candidates must be based in India", "ae", "Dubai, United Arab Emirates")
+
+
+# ------------------------------------------------------------------ remote, hybrid, on-site
+def test_remote_only_needs_a_word_about_remote_before_the_model_and_its_work_mode_after():
+    p = use(work_modes=["remote"])
+    office = f.analyze(job(), None, {})
+    remote = f.analyze(job(description="Fully remote within Germany: APIs in Python and FastAPI. " * 6), None, {})
+    assert office.reasons[0] == "отсев по настройке: нужен remote, а в вакансии о нём ни слова"
+    assert remote.verdict == "live"
+    llm.apply_assessment(remote, llm.Assessment(fit=7, work_mode="hybrid"))
+    assert remote.verdict == "skip" and "отсев по настройке: гибрид, а нужен remote" in remote.reasons
+    assert p["target"]["offices"] == [] and any("offices не используется" in n for n in p["_notes"])
+
+
+def test_no_remote_in_work_modes_drops_remote_searches_and_remote_jobs():
+    p = use(work_modes=["hybrid", "onsite"])
+    j = f.analyze(job(), None, {})
+    llm.apply_assessment(j, llm.Assessment(fit=7, work_mode="remote"))
+    assert j.verdict == "skip" and "отсев по настройке: remote, а нужен гибрид, офис" in j.reasons
+    assert "European Union" not in [x["name"] for x in config.default_linkedin_locations(p)]
+    assert f.analyze(job(location="Remote - Europe", remote=True), None, {}).reasons[-1] == "remote, а в work_modes его нет"

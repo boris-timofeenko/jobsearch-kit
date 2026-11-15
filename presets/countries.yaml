@@ -20,7 +20,8 @@
 # visa_scheme — название схемы для рубрики модели. city — главный IT-город: модель оценивает вакансию «как будто
 #   она там», а The Muse ищет по нему. geo — координаты центра страны для резервного поиска hiring.cafe.
 # aggregators — доски этой страны, которые включаются сами, если страна в целях или ты в ней живёшь
-#   (switches.based_in): habr — Хабр Карьера.
+#   (switches.based_in): habr — Хабр Карьера; hh, superjob, getmatch, geekjob — заглушки (jobsearch/sources/stubs.py:
+#   прочитать их сейчас нельзя, в логе прогона и в `check` видно почему).
 # sponsor_register: ind — только Нидерланды: публичный реестр признанных спонсоров IND, по нему проверяется каждый
 #   работодатель. Для других стран такого открытого реестра нет.
 
@@ -276,7 +277,8 @@ ru:
   visa_scheme: "ВКС (высококвалифицированный специалист)"
   geo: [61.524, 105.3188]
   part: cis
-  aggregators: [habr]             # Хабр Карьера включается сама, если страна в целях или ты в ней живёшь
+  aggregators: [habr, hh, superjob, getmatch, geekjob]   # сами включаются, если страна в целях или ты в ней живёшь;
+                                                        #   hh, superjob, getmatch, geekjob — пока заглушки
 
 by:
   name: Belarus
@@ -287,7 +289,7 @@ by:
   visa_scheme: "разрешение на работу"
   geo: [53.7098, 27.9534]
   part: cis
-  aggregators: [habr]
+  aggregators: [habr, hh]
 
 kz:
   name: Kazakhstan
@@ -298,7 +300,7 @@ kz:
   visa_scheme: "разрешение на работу"
   geo: [48.0196, 66.9237]
   part: cis
-  aggregators: [habr]
+  aggregators: [habr, hh]
 
 uz:
   name: Uzbekistan

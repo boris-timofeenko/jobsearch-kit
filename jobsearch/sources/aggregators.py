@@ -12,12 +12,13 @@ ROLE = {"queries": ["QA Engineer", "Test Automation Engineer", "SDET"], "keyword
 SEARCH_COUNTRIES = ("Netherlands", "Belgium", "Germany", "France")   # target countries by name (configure)
 PRIMARY = {"code": "nl", "name": "Netherlands", "city": "Amsterdam"}
 HC_CONFIG = {}            # merged hiringcafe section of config.yaml + my/config.yaml
+HC_WORKPLACE = ["Onsite", "Remote", "Hybrid"]   # switches.work_modes in hiring.cafe's words
 ADZUNA = {"at", "au", "be", "br", "ca", "ch", "de", "es", "fr", "gb", "in", "it", "mx", "nl", "nz", "pl", "sg", "us", "za"}
 
 
 def configure(cfg):
     """Search terms and countries from the loaded config (config.load): called by cli.load_cfg."""
-    global SEARCH_COUNTRIES, PRIMARY, HC_CONFIG
+    global SEARCH_COUNTRIES, PRIMARY, HC_CONFIG, HC_WORKPLACE
     p = cfg.get("profile") or {}
     role, t = p.get("role") or {}, p.get("target") or {}
     ROLE["queries"] = list(role.get("queries") or ROLE["queries"])
@@ -27,6 +28,8 @@ def configure(cfg):
     SEARCH_COUNTRIES = tuple(c["name"] for c in countries)
     PRIMARY = t.get("primary") or {}
     HC_CONFIG = dict(cfg.get("hiringcafe") or {})
+    modes = (p.get("prefs") or {}).get("work_modes") or ["onsite", "remote", "hybrid"]
+    HC_WORKPLACE = [{"onsite": "Onsite", "remote": "Remote", "hybrid": "Hybrid"}[m] for m in modes]
     from . import habr
     habr.configure(cfg)
     from ..config import catalog
@@ -557,7 +560,7 @@ class _HcSearch:
                     f"ячейке фильтров {args}, часть не видна")
             return
         key, values = _HC_SPLITS[depth]
-        for value in values:
+        for value in [v for v in values if key not in args or set(v) <= set(args[key])]:   # within work_modes
             cards, shown, total = self.page({**args, key: value})
             if shown >= self.hc["max_per_company"] and shown < total:
                 self.split({**args, key: value}, depth + 1)
@@ -766,7 +769,7 @@ def hiringcafe(http):
                 _hc_log(f"unknown country {cname!r} (нет в presets/countries.yaml), skipped")
                 continue
             search = _HcSearch(http, hc, {"search": query, "location": cname,
-                                          "workplace_types": ["Onsite", "Remote", "Hybrid"],
+                                          "workplace_types": list(HC_WORKPLACE),
                                           "posted_within_days": hc["fresh_days"], "limit": hc["limit"],
                                           "max_per_company": hc["max_per_company"]}, f"{cname} {query!r}")
             try:
@@ -898,3 +901,7 @@ from . import habr as _habr  # noqa: E402
 
 AGGREGATORS["habr"] = _habr.habr
 _ats.DETAIL_FETCHERS["habr"] = _ats.detail_page
+
+from .stubs import STUBS as _STUBS  # noqa: E402
+
+AGGREGATORS.update(_STUBS)            # boards that cannot be read today: hh.ru, SuperJob, GetMatch, Geekjob

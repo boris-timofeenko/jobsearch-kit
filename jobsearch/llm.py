@@ -14,6 +14,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from .config import WORK_MODE_RU
 from .models import company_key
 
 PROFILE = "Кандидат: профиль не настроен (my/profile.yaml)."
@@ -165,6 +166,9 @@ def _goal(c, t, prefs=None, eu_citizen=False):
             f"{x['name']}" + (f" ({x.get('visa_scheme', '')}" + (f", порог ~€{x['salary_floor_month']}/мес"
                                                                   if x.get("salary_floor_month") else "") + ")"
                                if needs_visa and x.get("visa_scheme") else "") for x in extra) + ".")
+    modes = t.get("work_modes") or list(WORK_MODE_RU)
+    if set(modes) != set(WORK_MODE_RU):
+        lines.append(f"Формат работы: только {', '.join(WORK_MODE_RU[m] for m in modes)}.")
     if t.get("offices"):
         from .config import offices_names
         lines.append(f"Офис или гибрид в других странах региона ({offices_names(t)}) — тоже переезд, ниже в списке.")
@@ -590,6 +594,11 @@ def apply_assessment(job, a: Assessment):
         flags.append("LLM: визовая поддержка явно ✅")
     elif moving:
         flags.append("LLM: помощь с переездом ✅")
+    if a.work_mode in WORK_MODE_RU and a.work_mode not in _f.WORK_MODES:          # switches.work_modes
+        wanted = ", ".join(WORK_MODE_RU[m] for m in WORK_MODE_RU if m in _f.WORK_MODES)
+        skip.append(f"{_f.SETTING}: {WORK_MODE_RU[a.work_mode]}, а нужен {wanted}")
+    elif a.work_mode == "unknown" and _f.WORK_MODES != set(WORK_MODE_RU):
+        flags.append("LLM: формат работы не указан")
     if job.track in ("remote", "remote_nl") and a.work_mode in ("hybrid", "onsite"):
         if _f.OFFICES.search(job.location or ""):
             job.track = "region"              # not remote after all, but a move within the office regions is fine

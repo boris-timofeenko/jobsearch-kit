@@ -86,6 +86,12 @@ def test_deep_only_aggregator_runs_in_the_deep_run_only(monkeypatch):
     assert [j.id for j in cli.collect(cfg, Http(), deep)[0]] == ["slow:1"]
 
 
+def test_blocked_board_is_a_named_stub_that_explains_itself(capsys):
+    run = SimpleNamespace(no_linkedin=True, no_companies=True, no_aggregators=False, deep=False)
+    assert cli.collect({"aggregators": ["hh"]}, Http(), run)[0] == []
+    assert "hh: заглушка, вакансий нет — hh.ru: с апреля 2026" in capsys.readouterr().out
+
+
 # ---------------------------------------------------------------- LinkedIn search reports a cut-short pagination
 CARD = ('<li><div class="base-search-card" data-entity-urn="urn:li:jobPosting:{id}">'
         '<h3 class="base-search-card__title">QA Engineer</h3></div></li>')

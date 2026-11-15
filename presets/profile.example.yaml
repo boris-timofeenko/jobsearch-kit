@@ -5,6 +5,7 @@
 # Короткие ответы, которых хватает, чтобы начать. Всё остальное ниже — описание тебя и роли для модели.
 switches:
   goal: both                    # relocate — только переезд · remote — только удалёнка · both — переезд и remote
+  work_modes: [remote, hybrid, onsite]   # какой формат подходит: remote · hybrid (гибрид) · onsite (офис)
   countries: [nl, de]           # страны переезда, первая — основная. Коды из presets/countries.yaml: ЕС — nl de be fr
                                 #   es pt ie at pl cz se dk fi it lu cy; рядом — ch no gb rs me tr; СНГ и Кавказ — ru by
                                 #   kz uz kg am ge az; дальше — ae il us ca

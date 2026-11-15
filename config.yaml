@@ -32,9 +32,10 @@ board_workers: 8              # доски опрашиваются паралл
 # Есть ещё, включаются в my/config.yaml: iamexpat и undutchables (только Нидерланды), arbeitsagentur (только
 # Германия: немецкие тексты потом отсекает правило языка, если немецкого нет), habr — Хабр Карьера (сам
 # добавляется, если в целях или в switches.based_in Россия, Беларусь или Казахстан: поле aggregators каталога стран).
-# hh.ru не подключён: с апреля 2026 его API ищет вакансии только с токеном приложения, а токен дают
-# работодателям после модерации; сайт закрыт капчей. GetMatch и Geekjob отдают вакансии только через API, закрытый
-# в их robots.txt.
+# hh, superjob, getmatch, geekjob — заглушки (jobsearch/sources/stubs.py): hh.ru с апреля 2026 ищет вакансии через
+# API только с токеном приложения, а токен дают работодателям после модерации, сайт закрыт капчей; SuperJob требует
+# ключ приложения; GetMatch и Geekjob отдают вакансии только через API, закрытый в их robots.txt. Заглушка ничего не
+# даёт и пишет причину в лог; для России они включаются сами, чтобы источник заработал без правки профиля.
 aggregators: [arbeitnow, landingjobs, himalayas, remotive, remoteok, workingnomads, weworkremotely, themuse, jobicy,
               adzuna, workable_search]
 

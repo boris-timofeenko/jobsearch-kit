@@ -136,6 +136,9 @@ def collect(cfg, http, a, coverage=None):
             f = aggregators.AGGREGATORS.get(name)
             if not f:
                 continue
+            if getattr(f, "blocked", ""):
+                log(f"{name}: заглушка, вакансий нет — {f.blocked}")
+                continue
             try:
                 jobs = f(http)
             except Exception as e:
@@ -1016,6 +1019,7 @@ def cmd_check(a):
     floor = (lambda c: f", порог €{c.get('salary_floor_month') or '—'}") if visa_floors else (lambda c: "")
     tracks = ([f"{t['primary']['name']} (основная{floor(t['primary'])})"] if t.get("primary") else []) + [
         f"{c['name']}" + (f" (€{c.get('salary_floor_month') or '—'})" if visa_floors else "") for c in t["countries"]]
+    print("формат: " + ", ".join(config.WORK_MODE_RU[m] for m in t["work_modes"]))
     zones = {"europe": "Европа и СНГ", "middle_east": "Ближний Восток и Африка", "americas": "Америка", "asia": "Азия"}
     print("страны: " + (", ".join(tracks) or "нет (только remote)")
           + (" · офисы: " + config.offices_names(t) if t.get("offices") else " · офисы вне этих стран не показываются")
@@ -1040,7 +1044,8 @@ def cmd_check(a):
     print(f"LinkedIn: {'вкл' if li.get('enabled', True) else 'выкл'}, запросов {len(li.get('queries') or [])}, "
           f"локации: " + ", ".join(f"{l['name']}{' (remote)' if l.get('remote') else ''}" for l in li.get("locations") or []))
     print(f"доски компаний: {len(cfg['companies'])} из {', '.join(cfg.get('company_files') or []) or '—'}")
-    print(f"агрегаторы: {', '.join(cfg.get('aggregators') or []) or '—'}; только в deep: "
+    stub = lambda a: f"{a} (заглушка)" if getattr(aggregators.AGGREGATORS.get(a), "blocked", "") else a
+    print(f"агрегаторы: {', '.join(map(stub, cfg.get('aggregators') or [])) or '—'}; только в deep: "
           f"{', '.join(cfg.get('aggregators_deep') or []) or '—'}")
     env = {k: bool(os.environ.get(k)) for k in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "ANTHROPIC_API_KEY",
                                                 "CLAUDE_CODE_OAUTH_TOKEN")}

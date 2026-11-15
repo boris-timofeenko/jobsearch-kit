@@ -247,6 +247,7 @@ OUTSOURCING = "penalize"   # outsourcing: skip | penalize (−1 fit) | ok — th
 PUBLIC_SECTOR = "skip"     # public_sector: skip | ok — clearance, defence, government
 SALARY_MIN = None          # None: visa floor of the country, in target countries only; a number: own minimum everywhere
 REMOTE_OK = True           # goal includes remote
+WORK_MODES = {"remote", "hybrid", "onsite"}   # switches.work_modes: formats the person takes
 OFFICES = EU_LOC           # switches.offices: offices outside the target countries that count as a move (region track)
 REMOTE_ZONES = {"europe"}  # zones a remote posting may name (remote_zones)
 EU_CITIZEN = False         # no visa needed and every target is in the EU: "EU citizens only" is no obstacle
@@ -266,7 +267,7 @@ def configure(profile):
     global RELEVANT_TITLE, NOT_RELEVANT_TITLE, STACK, NL_LOC, KNOWN_LANGS, COUNTRIES, COUNTRY_CODES, FOCUS, PRIMARY
     global PENALTIES, TITLE_BOOST, OFF_DOMAIN, OFF_DOMAIN_REASON, LEVEL, NEEDS_VISA, BASED_IN
     global LANG_MODE, CONTRACT, AGENCIES, PUBLIC_SECTOR, SALARY_MIN, REMOTE_OK, OFFICES, OUTSOURCING, PARTS
-    global REMOTE_ZONES, EU_CITIZEN, CURRENCY, RATES
+    global REMOTE_ZONES, EU_CITIZEN, CURRENCY, RATES, WORK_MODES
     role, target, cand = profile.get("role", {}), profile.get("target", {}), profile.get("candidate", {})
     countries = ([target["primary"]] if target.get("primary") else []) + list(target.get("countries") or [])
     needs_visa = bool(cand.get("needs_visa", True))      # without a visa the IND register means nothing
@@ -308,6 +309,7 @@ def configure(profile):
     LANG_MODE, CONTRACT, AGENCIES, PUBLIC_SECTOR = (prefs["other_language"], prefs["contract"], prefs["agencies"],
                                                     prefs["public_sector"])
     SALARY_MIN, REMOTE_OK = prefs["salary_min"], prefs["remote"]
+    WORK_MODES = set(prefs.get("work_modes") or ("remote", "hybrid", "onsite"))
     OUTSOURCING = prefs["outsourcing"]
     OFFICES = offices_regex(target.get("offices", ["eu"]), countries)
     REMOTE_ZONES = remote_zones(profile)
@@ -398,6 +400,10 @@ def pay_rate(text):
     return ""
 
 
+# Any word about working away from the office, in English and Russian: a remote-only person (switches.work_modes:
+# [remote]) does not need a posting that says nothing of the kind. Lenient on purpose — the model's work_mode decides.
+REMOTE_TEXT = re.compile(r"\b(remote\w*|work from home|wfh|work from anywhere|distributed team|telecommut\w*|"
+                         r"home[- ]?office|удал[её]нн\w*|удал[её]нк\w*|дистанционн\w*|из дома|из любой точки)", I)
 HYBRID = re.compile(r"\b(hybrid|on[- ]?site|in[- ]office|in the office|from (our|the) office|days? (per|a) week in)\b", I)
 FULLY_REMOTE = re.compile(r"\b(fully remote|100 ?% remote|remote[- ]first|work from anywhere|anywhere in (the )?(eu|europe))\b", I)
 
@@ -739,6 +745,8 @@ def analyze(job, sponsors, cfg):
         job.track = "region"                   # on-site / hybrid in an office region (switches.offices): a move there is fine
     else:
         job.track = "other"
+    if WORK_MODES == {"remote"} and not (remote or REMOTE_TEXT.search(f"{text}\n{job.location}")):
+        skip.append(f"{SETTING}: нужен remote, а в вакансии о нём ни слова")
     lm = None if m else LOCAL_ONLY.search(text)
     quote = lm.group(0).strip()[:60] if lm else ""
     if lm and TIME_ZONE.search(lm.group(0)):
@@ -760,9 +768,10 @@ def analyze(job, sponsors, cfg):
 
 
 def out_of_goal(job):
-    """A live posting on a track the goal leaves out (remote for relocation only) is kept as `other`: stored, never
-    assessed or sent."""
-    why = "remote, а цель — только переезд" if job.track in ("remote", "remote_nl") and not REMOTE_OK else ""
+    """A live posting on a track the goal leaves out (remote for relocation only or without remote in work_modes) is
+    kept as `other`: stored, never assessed or sent."""
+    why = ("" if job.track not in ("remote", "remote_nl") or REMOTE_OK else
+           "remote, а в work_modes его нет" if "remote" not in WORK_MODES else "remote, а цель — только переезд")
     if why and job.verdict == "live":
         job.verdict = "other"
         job.reasons.append(why)

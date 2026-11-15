@@ -8,6 +8,7 @@ from . import config
 
 QUESTIONS = [
     ("goal", "Что ищешь? relocate — переезд, remote — удалёнка, both — и то и другое", "choice"),
+    ("work_modes", "Формат работы через запятую: remote, hybrid, onsite", "work_modes"),
     ("countries", "Страны переезда через запятую, первая — основная ({codes})", "countries"),
     ("offices", "Офис в других странах, куда тоже готов переехать: eu, europe, cis (СНГ и Кавказ), middle_east, "
                 "americas, asia, world, коды стран через запятую или none", "offices"),
@@ -81,6 +82,10 @@ def parse(kind, raw, key, cat):
         items = [] if items in ([], ["none"]) else items
         bad = [x for x in items if x not in config.REGIONS and x not in cat]
         return (items, "") if not bad else (None, f"неизвестно: {', '.join(bad)}")
+    if kind == "work_modes":
+        why = []
+        modes = config.work_modes_list(raw.strip("[]"), why)
+        return (modes, "") if modes and not why else (None, "из: " + ", ".join(config.WORK_MODES))
     if kind == "currency":
         v = raw.upper()
         return (v, "") if re.fullmatch(r"[A-Z]{3}", v) else (None, "трёхбуквенный код: EUR, RUB, USD")
