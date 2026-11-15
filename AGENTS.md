@@ -35,8 +35,9 @@ jobsearch/
   llm.py          рубрика (шаблон RULES_TEMPLATE), Assessment (pydantic), бэкенды api/cli, apply_assessment
   sponsors.py     реестр IND: загрузка, нормализация имён, сопоставление (точное / префиксное «≈»)
   sources/        linkedin.py (гостевой поиск), ats.py (ATS и корпоративные сайты), aggregators.py,
-                  expat_boards.py (iamexpat, undutchables), hc_chrome.py (резервный транспорт hiring.cafe)
-  db.py           SQLite: jobs, coverage (когда поиск LinkedIn последний раз дошёл до конца)
+                  expat_boards.py (iamexpat, undutchables), hc_chrome.py (резервный транспорт hiring.cafe),
+                  telegram.py (каналы и группы Telegram: веб-просмотр, Telethon, разбор постов моделью)
+  db.py           SQLite: jobs, coverage (когда поиск LinkedIn последний раз дошёл до конца), tg_posts (посты каналов)
   http.py         requests.Session: темп, повтор после 429, счётчики ответов
   report.py       markdown/html отчёты, карточки Telegram, подписи и порядок треков
   notify.py       Telegram sendMessage, .env
@@ -116,7 +117,8 @@ QA-значения, с которыми модули стартуют (`title_e
    Доски компаний (`collect_boards`, 8 потоков, своя сессия на поток): заголовок по роли + локация в целевой стране,
    ЕС, remote или пустая (`filters.in_search_area`; регэкспы стран тоже, потому что Personio и Teamtailor пишут один
    город). Дубли одной роли по городам схлопываются (`merge_duplicates`). Агрегаторы — `aggregators`, медленные и
-   ночные — `aggregators_deep`.
+   ночные — `aggregators_deep`. Telegram-каналы (`collect_telegram`, `run --no-telegram` выключает) — ниже,
+   «Telegram-каналы».
 2. **Дедуп по id.** Известные id получают `last_seen` и дальше не идут.
 3. **Описания** (`fetch_descriptions`): LinkedIn detail, Workday, Teamtailor, SmartRecruiters, Bundesagentur,
    hiring.cafe, schema.org JobPosting корпоративных сайтов. Основная страна первой, лимит `detail_fetch_limit` и
@@ -305,6 +307,34 @@ Telegram: первым сообщением сводка прогона (соб�
 модели; при смене логики поднять `VERSION`. Формат банка — `docs/CONFIG.md`, «my/cv_bank.yaml». До 15.11 в `build_for_job` трек вакансии затирал подстроенное резюме (`t`), и
 кнопка падала на первом клике: сквозной тест `tests/test_cv_build.py` с подставной моделью ловит такое.
 
+## Telegram-каналы (`sources/telegram.py`)
+
+`tg_channels` в `my/config.yaml` (имена, `@имя`, ссылки `t.me/…`). Подписки нет и не нужно: открытый канал отдаёт
+веб-просмотр `t.me/s/<имя>` (~20 постов на странице, назад — `?before=<id>`) без аккаунта. Прогон читает только
+посты новее последнего в таблице `tg_posts`, первое чтение — за `days` (30), потолок `max_pages`. Один запрос на канал
+раз в два часа, аккаунт не участвует. Проверка на 12 русскоязычных каналах с вакансиями (15.11.2026): 11 открыты,
+за месяц 517 постов, со строкой-заголовком QA — 127.
+Группы и каналы без просмотра (`t.me/s/` отвечает 302 на `t.me/<имя>`) читает Telethon: `tg-login` (TG_API_ID/
+TG_API_HASH из my.telegram.org, номер, код и 2FA вводит человек) создаёт сессию `data/tg.session` (chmod 600);
+прогон подключается на секунды, `iter_messages` с `min_id` = последний сохранённый, без вступления в чат, ответы
+внутри обсуждения пропускаются, FloodWait до 2 минут Telethon пережидает сам. Отдельная авторизация, а не чужой файл
+сессии: два клиента на одной сессии ломают друг друга. Вступлений в каналы нет — массовые Telegram считает спамом.
+Разбор: строка поста до 100 символов, прошедшая `is_relevant_title` (`title_lines`), отправляет пост к модели
+(`backend.ask`, схема `PostVacancies`: title, company, location «City, Country» или «Remote (регион)», work_mode,
+apply_url, fragment — только для подборок). Ответ хранится в `tg_posts.extracted` (NULL — не разобран; сбой или
+`--no-llm` оставляют пост на следующий прогон, `extract_per_run` 200). Вакансии пересобираются в каждом прогоне из
+всех разобранных постов за `days`: известные id только получают `last_seen`, упавший после разбора прогон ничего не
+теряет. id `telegram:<канал>/<msg>[/<n>]`, ссылка карточки — на пост (способ отклика там). Короткий пост (< 1500 символов, одна-две внешние ссылки) ещё до разбора получает текст страницы по ссылке
+(`page_link`, `job_page_text`: LinkedIn detail по `/jobs/view/<id>`, иначе `ats.detail_page`; хранится в
+`tg_posts.page`): модель берёт оттуда город и режим, текст страницы идёт в описание. На проверке без этого inDrive («Senior
+Fullstack QA в inDrive. Описание вакансии.», город только на странице) уходил в `other` с пустой локацией, а пост
+Mayflower в 244 символа не доходил до оценки (нужно 300). Роль из подборки короче 700 символов дополняется
+страницей своей ссылки уже после разбора.
+Дальше общий путь: дубли по компании + заголовку, эвристики, модель. Ложные строки
+(«Qatar» проходит `qa` без `\b` в `title_include`) стоят один пустой ответ модели. Заголовки на русском (в QA —
+«тестировщик») проходят, только если они есть в `title_include`.
+Команды: `tg-check [каналы] [--days N]` (только чтение, ничего не пишет), `tg-login`. Тесты — `tests/test_telegram.py`.
+
 ## hiring.cafe
 
 Ночной источник (`aggregators_deep`): официальный read-only MCP (`/api/mcp`, `search_jobs`, `get_job_details`), без
@@ -344,6 +374,7 @@ Mac: `scripts/install_launchd.sh [часы…] [--bot] [--remove]` генери�
 `pytest -q tests`. `conftest.py` подставляет `tests/fixtures/my` (QA-профиль калибровки) и временную `data/`.
 `test_switches.py` — каждый переключатель и его взаимодействие с полями профиля; `test_cv_docx.py` и
 `test_cv_build.py` — разбор и запись DOCX, сквозная сборка CV во всех форматах с подставной моделью;
+`test_telegram.py` — веб-просмотр каналов, разбор постов в вакансии, один вызов модели на пост;
 `test_config.py` — нормализация стран, все пресеты (заполненность, регэкспы, заголовки ✅/❌, рубрика без
 незаполненных полей), виза/резидентство/языки/уровни, `init`/`check`.
 

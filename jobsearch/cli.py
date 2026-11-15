@@ -8,6 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from types import SimpleNamespace
 
 import yaml
 
@@ -15,7 +16,7 @@ from . import filters, llm, notify, report
 from .db import DB
 from .http import Http
 from .models import company_key
-from .sources import aggregators, ats, linkedin
+from .sources import aggregators, ats, linkedin, telegram
 from .sponsors import Sponsors
 from . import config
 from .config import DATA, ROOT
@@ -179,6 +180,107 @@ def collect_boards(companies, workers=8):
     return out
 
 
+def collect_telegram(cfg, http, db, a, known):
+    """Telegram job channels (sources/telegram.py, `tg_channels` in my/config.yaml): new posts are stored, the model
+    splits the ones with a title line of the role into vacancies, and the jobs are rebuilt from every post parsed within `days`:
+    stored ids are only touched, so a run that died after parsing loses nothing."""
+    tcfg = cfg.get("tg_channels") or {}
+    channels = list(dict.fromkeys(telegram.channel_name(c) for c in tcfg.get("channels") or []))
+    if not channels or getattr(a, "no_telegram", False):
+        return []
+    since = telegram.since_iso(tcfg.get("days", 30))
+    last = db.tg_last_ids()
+    relevant = lambda p: bool(telegram.title_lines(p.text, filters.is_relevant_title))
+    no_preview = []
+    for ch in channels:
+        try:
+            posts = telegram.web_posts(http, ch, last.get(ch, 0), since, tcfg.get("max_pages", 40))
+        except telegram.NoPreview:
+            no_preview.append(ch)
+            continue
+        except Exception as e:
+            log(f"telegram {ch}: FAILED {e}")
+            continue
+        db.tg_save(posts, relevant)
+        log(f"telegram {ch}: {len(posts)} new posts, {sum(map(relevant, posts))} по роли")
+        http.sleep()
+    if no_preview and telegram.account_ready(DATA):
+        try:
+            for ch, posts in telegram.account_posts(DATA, no_preview, last, since).items():
+                db.tg_save(posts, relevant)
+                log(f"telegram {ch} (account): {len(posts)} new posts, {sum(map(relevant, posts))} по роли")
+        except Exception as e:
+            log(f"telegram account: FAILED {e}")
+    elif no_preview:
+        log(f"telegram {', '.join(no_preview)}: no web preview (a group or the preview is off), "
+            f"reading needs the account: `jobsearch tg-login`")
+    db.commit()
+
+    pending = db.tg_pending(since, tcfg.get("extract_per_run", 200))
+    for r in pending:
+        link = telegram.page_link(telegram.post_from_row(r))
+        if link and r["page"] is None:
+            db.tg_set_page(r["channel"], r["msg_id"], job_page_text(http, link)[:8000])
+    pending = db.tg_pending(since, tcfg.get("extract_per_run", 200))
+    if pending and not a.no_llm:
+        backend, why = llm.pick_backend(cfg.get("llm", {}))
+        if backend:
+            parse_tg_posts(db, pending, backend, cfg.get("llm", {}).get("workers", 4))
+        else:
+            log(f"telegram: {len(pending)} posts wait for the model ({why})")
+    db.commit()
+
+    jobs, parsed = [], db.tg_parsed(since)
+    for r in parsed:
+        jobs += telegram.to_jobs(telegram.post_from_row(r), [telegram.Vacancy(**v) for v in json.loads(r["extracted"])],
+                                 filters.is_relevant_title)
+    for j in jobs:                          # a digest's role: its own page, if the post links one
+        if j.id not in known and len(j.description) < 700 and "— страница вакансии —" not in j.description:
+            page = job_page_text(http, j.extra.get("apply_url", ""))
+            if page:
+                j.description += "\n\n— страница вакансии —\n" + page[:6000]
+    log(f"telegram: {len(jobs)} vacancies of the role in {len(parsed)} parsed posts")
+    return jobs
+
+
+def parse_tg_posts(db, rows, backend, workers):
+    """The model splits each post into vacancies; a failed call leaves the post pending for the next run."""
+    def one(r):
+        post = telegram.post_from_row(r)
+        lines = telegram.title_lines(post.text, filters.is_relevant_title)
+        try:
+            out = backend.ask(telegram.EXTRACT_SYSTEM, telegram.extract_prompt(post, lines), telegram.PostVacancies)
+        except Exception as e:
+            log(f"telegram parse {post.url}: {e}")
+            return post, None
+        return post, json.dumps([v.model_dump() for v in out.vacancies], ensure_ascii=False)
+    done = 0
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        for post, vacancies in ex.map(one, rows):
+            if vacancies is not None:
+                db.tg_set_extracted(post.channel, post.id, vacancies)
+                done += 1
+    log(f"telegram: model parsed {done}/{len(rows)} posts")
+
+
+LINKEDIN_VIEW = re.compile(r"linkedin\.com/jobs/view/(?:[^/?#]*-)?(\d{6,})")
+
+
+def job_page_text(http, url):
+    """Full text behind a short post's apply link: a LinkedIn posting, else schema.org JobPosting or the page's main
+    text. Telegram links (a recruiter's handle, another channel) and failures give ""."""
+    if not url.startswith("http") or re.search(r"//(t|telegram)\.me/", url):
+        return ""
+    try:
+        m = LINKEDIN_VIEW.search(url)
+        if m:
+            d = linkedin.detail(http, m.group(1))
+            return (d or {}).get("description") or ""
+        return ats.detail_page(http, SimpleNamespace(url=url))
+    except Exception:
+        return ""
+
+
 def merge_duplicates(jobs):
     """Same company + same title posted for many cities -> one job listing all locations."""
     out = {}
@@ -249,6 +351,10 @@ def cmd_run(a):
     detail_budget = (li.get("detail_budget_min") or {}).get("deep" if getattr(a, "deep", False) else "fast", 0) * 60
 
     collected, covered, notes = collect(cfg, http, a, db.coverage())
+    try:
+        collected += collect_telegram(cfg, http, db, a, known)
+    except Exception as e:                  # a broken channel source must not cost the rest of the run
+        log(f"telegram: FAILED {e}")
     if http.summary():
         log(f"LinkedIn: {http.summary()}")
     seen, new_jobs = set(), []
@@ -522,6 +628,41 @@ def cmd_telegram_test(a):
                         limit=a.sample)
         ok = notify.telegram_cards("Пример дайджеста", rows, db)
         print(f"sample cards ({len(rows)}):", "sent" if ok else "FAILED")
+
+
+def cmd_tg_login(a):
+    notify.load_env(ROOT / ".env")
+    print(f"вошли как {telegram.login(DATA)}; сессия {telegram.session_path(DATA)}.session")
+
+
+def cmd_tg_check(a):
+    """Read-only: what each channel gives over `--days`, nothing is stored."""
+    cfg = load_cfg()
+    notify.load_env(ROOT / ".env")
+    names = [telegram.channel_name(c) for c in (a.channels or (cfg.get("tg_channels") or {}).get("channels") or [])]
+    if not names:
+        sys.exit("нет каналов: tg_channels.channels в my/config.yaml или имена аргументами")
+    http, since = Http(delay=(1.0, 2.0)), telegram.since_iso(a.days)
+    no_preview = []
+    for ch in names:
+        try:
+            posts = telegram.web_posts(http, ch, 0, since)
+        except telegram.NoPreview:
+            no_preview.append(ch)
+            continue
+        except Exception as e:
+            print(f"❌ {ch}: {e}")
+            continue
+        lines = [ln for p in posts for ln in telegram.title_lines(p.text, filters.is_relevant_title)[:1]]
+        print(f"✅ {ch}: веб-просмотр, постов за {a.days} дн. {len(posts)}, с заголовком роли {len(lines)}"
+              + (f" (например «{lines[-1][:60]}»)" if lines else ""))
+    if no_preview and not telegram.account_ready(DATA):
+        print(f"🔒 {', '.join(no_preview)}: веб-просмотра нет (группа или он выключен) — читать через аккаунт: "
+              f"TG_API_ID/TG_API_HASH в .env и `python -m jobsearch tg-login`")
+    elif no_preview:
+        for ch, posts in telegram.account_posts(DATA, no_preview, {}, since).items():
+            n = sum(bool(telegram.title_lines(p.text, filters.is_relevant_title)) for p in posts)
+            print(f"✅ {ch}: через аккаунт, сообщений за {a.days} дн. {len(posts)}, с заголовком роли {n}")
 
 
 def cmd_bot(a):
@@ -921,6 +1062,7 @@ def main(argv=None):
     r.add_argument("--no-linkedin", action="store_true")
     r.add_argument("--no-companies", action="store_true")
     r.add_argument("--no-aggregators", action="store_true")
+    r.add_argument("--no-telegram", action="store_true", help="не читать Telegram-каналы (tg_channels)")
     r.add_argument("--time-filter", help="LinkedIn f_TPR, e.g. r86400 (day), r604800 (week), r2592000 (month)")
     r.add_argument("--no-llm", action="store_true", help="skip the LLM assessment stage")
     r.add_argument("--deep", action="store_true", help="LinkedIn: все запросы, полная пагинация, без раннего стопа (~40 мин)")
@@ -960,6 +1102,14 @@ def main(argv=None):
     asx.add_argument("--again", action="store_true",
                      help="переоценить и уже оценённое (после правки профиля); нужен --days или --since")
     asx.set_defaults(fn=cmd_assess)
+
+    tl = sub.add_parser("tg-login", help="вход в аккаунт Telegram для групп и каналов без веб-просмотра (один раз)")
+    tl.set_defaults(fn=cmd_tg_login)
+
+    tc = sub.add_parser("tg-check", help="каналы из tg_channels: открыт ли веб-просмотр, сколько постов и заголовков роли")
+    tc.add_argument("channels", nargs="*", help="проверить эти вместо списка из my/config.yaml")
+    tc.add_argument("--days", type=int, default=30)
+    tc.set_defaults(fn=cmd_tg_check)
 
     bt = sub.add_parser("bot", help="Telegram-бот: кнопки статусов под карточками, /applied, /stats")
     bt.set_defaults(fn=cmd_bot)

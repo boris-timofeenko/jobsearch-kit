@@ -7,3 +7,4 @@ pytest
 pillow
 python-docx>=1.1
 pypdf
+telethon        # только для Telegram-групп через аккаунт (tg-login)

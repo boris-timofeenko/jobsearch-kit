@@ -21,6 +21,12 @@ company_files:
 #     - {name: Berlin, remote: false, max_pages: 30}
 #     - {name: European Union, remote: true, max_pages: 50, queries: [Backend Engineer, Python Developer]}
 
+# Каналы и группы Telegram с вакансиями: имена, @имя или ссылки. Открытые каналы читаются без аккаунта; группы и
+# каналы без веб-просмотра — после `python -m jobsearch tg-login` (docs/SETUP.md, «Telegram-каналы»).
+# Проверить, что даёт каждый: `python -m jobsearch tg-check`.
+# tg_channels:
+#   channels: [forallqa, wantapply_qa_jobs, https://t.me/dev_connectablejobs]
+
 # telegram:
 #   min_fit: 5              # строже: в Telegram только fit >= 5
 #   quiet_hours: "23:00-08:00"

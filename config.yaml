@@ -44,6 +44,12 @@ hiringcafe:                   # hiringcafe.com: официальный read-only
   chrome_display: "99"        # резервный транспорт через настоящий Chrome (только сервер с Xvfb, HC_CHROME в .env)
   chrome_profile: ""
 
+tg_channels:                  # каналы и группы Telegram с вакансиями (jobsearch/sources/telegram.py); список — в my/config.yaml
+  channels: []                # имена, @имя или ссылки t.me/…; открытые каналы читаются без аккаунта, группы — после tg-login
+  days: 30                    # первое чтение канала — за столько дней; посты старше на разбор не идут
+  max_pages: 40               # потолок страниц веб-просмотра на канал за прогон (страница — ~20 постов)
+  extract_per_run: 200        # постов на разбор моделью за прогон; остаток — в следующий
+
 telegram:
   enabled: false              # на сервере и в расписании включается флагом --notify
   min_fit: 4                  # в дайджест идут только новые вакансии, прошедшие LLM с fit >= min_fit

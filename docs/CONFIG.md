@@ -241,6 +241,9 @@ fit ≥ 5: бонус не вытаскивает слабую вакансию;
 | `linkedin.time_filter` | окно поиска, когда `run` запущен без `--time-filter` (неделя; дальше каждый запрос всё равно ищет не дальше 3 дней назад, `window_max`) |
 | `hiringcafe.queries`, `hiringcafe.countries` | по умолчанию — из профиля |
 | `hiringcafe.fresh_days`, `max_calls`, `jina_delay` | свежесть выдачи (21 день), потолок запросов на поиск (60), пауза резервного транспорта (3.5 с) |
+| `tg_channels.channels` | каналы и группы Telegram с вакансиями: имена, `@имя` или ссылки `t.me/…` (по умолчанию пусто). Открытые каналы читаются без аккаунта, группы — после `tg-login`. SETUP.md, «Telegram-каналы» |
+| `tg_channels.days` | первое чтение канала — за столько дней (30); посты старше на разбор не идут |
+| `tg_channels.max_pages`, `extract_per_run` | потолок страниц веб-просмотра на канал за прогон (40, по ~20 постов) и постов на разбор моделью за прогон (200) |
 | `telegram.min_fit` | порог fit для карточки (4); у отчёта порог всегда 4 |
 | `telegram.max_per_company` | карточек от одной компании за прогон (2) |
 | `telegram.summary_always` | сводка прогона даже без карточек (`true`) |
@@ -265,6 +268,7 @@ fit ≥ 5: бонус не вытаскивает слабую вакансию;
 | `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | агрегатор Adzuna по основной стране |
 | `JINA_API_KEY` (или `HC_JINA_KEY`) | резервный транспорт hiring.cafe, необязательно |
 | `HC_CHROME` | `auto` · `on` · `off`: резервный транспорт hiring.cafe через настоящий Chrome. `auto` включает его, если на машине есть Chrome, Xvfb и утилиты; `on` — ещё и `deploy.sh` ставит их на сервер. В `.env.example` — `off` |
+| `TG_API_ID`, `TG_API_HASH` | приложение на my.telegram.org для чтения Telegram-групп аккаунтом (`tg-login`); открытым каналам не нужны |
 | `AMO_JWT_ISSUER`, `AMO_JWT_SECRET` | подпись браузерного расширения для Firefox |
 
 Переменные окружения для запуска: `JOBSEARCH_MY` (другая папка вместо `my/`) и `JOBSEARCH_DATA` (вместо `data/`) —

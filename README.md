@@ -90,7 +90,8 @@ LinkedIn ─┐
    компаний — публичные API Greenhouse, Lever, Ashby, Recruitee, Workable, SmartRecruiters, Teamtailor, Personio,
    Workday и корпоративные сайты (SuccessFactors, Phenom). Плюс агрегаторы: Remotive, RemoteOK, We Work Remotely,
    Himalayas, Working Nomads, Landing.jobs, Arbeitnow, Jobicy, The Muse, Workable search, Adzuna, в глубоком прогоне
-   hiring.cafe (на сервере — ночью).
+   hiring.cafe (на сервере — ночью). И Telegram-каналы с вакансиями из твоего списка: открытые читаются без
+   аккаунта, посты модель разбирает на отдельные вакансии.
 2. **Эвристики** бесплатно отсекают очевидное и раскладывают вакансии по трекам: основная страна, дополнительные
    страны, офис в другой стране ЕС, remote. У каждого отсева записана причина, ничего не удаляется.
 3. **Модель** читает полный текст и отвечает структурой: та ли это роль, fit 0–10 по совпадению стека и уровня,

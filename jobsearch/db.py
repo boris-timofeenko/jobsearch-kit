@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,6 +19,13 @@ CREATE INDEX IF NOT EXISTS idx_jobs_verdict ON jobs(verdict, score);
 CREATE TABLE IF NOT EXISTS coverage (
   location TEXT, query TEXT, remote INTEGER, searched_at TEXT,
   PRIMARY KEY (location, query, remote)
+);
+-- posts of Telegram job channels (sources/telegram.py): the newest stored id is where the next run starts reading;
+-- candidate = a line passes the role's title filter; extracted = the model's vacancies as JSON, NULL = not parsed yet
+CREATE TABLE IF NOT EXISTS tg_posts (
+  channel TEXT, msg_id INTEGER, posted TEXT, text TEXT, links TEXT, candidate INTEGER, extracted TEXT, seen_at TEXT,
+  page TEXT,                  -- job page a short post links to, loaded before parsing; NULL = not loaded yet
+  PRIMARY KEY (channel, msg_id)
 );
 """
 
@@ -114,6 +122,30 @@ class DB:
         """Company name -> (LLM assessments, best final fit, owner touched it: any status but new)."""
         return {r[0]: (r[1], r[2], bool(r[3])) for r in self.c.execute(
             "SELECT company, count(*), max(llm_fit), sum(status != 'new') FROM jobs WHERE llm_json != '' GROUP BY company")}
+
+    def tg_last_ids(self):
+        return {r[0]: r[1] for r in self.c.execute("SELECT channel, max(msg_id) FROM tg_posts GROUP BY channel")}
+
+    def tg_save(self, posts, candidate):
+        self.c.executemany(
+            "INSERT OR IGNORE INTO tg_posts (channel, msg_id, posted, text, links, candidate, seen_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [(p.channel, p.id, p.date, p.text, json.dumps(p.links), int(candidate(p)), now()) for p in posts])
+
+    def tg_pending(self, since, limit):
+        """Candidate posts the model has not parsed yet (a failed or skipped parse stays pending), oldest first."""
+        return self.c.execute("SELECT * FROM tg_posts WHERE candidate=1 AND extracted IS NULL AND posted >= ? "
+                              "ORDER BY posted LIMIT ?", (since, limit)).fetchall()
+
+    def tg_set_page(self, channel, msg_id, text):
+        self.c.execute("UPDATE tg_posts SET page=? WHERE channel=? AND msg_id=?", (text, channel, msg_id))
+
+    def tg_set_extracted(self, channel, msg_id, vacancies_json):
+        self.c.execute("UPDATE tg_posts SET extracted=? WHERE channel=? AND msg_id=?", (vacancies_json, channel, msg_id))
+
+    def tg_parsed(self, since):
+        return self.c.execute("SELECT * FROM tg_posts WHERE extracted IS NOT NULL AND extracted != '[]' "
+                              "AND posted >= ? ORDER BY posted", (since,)).fetchall()
 
     def query(self, where="1=1", params=(), order="score DESC, first_seen DESC", limit=500):
         return self.c.execute(f"SELECT * FROM jobs WHERE {where} ORDER BY {order} LIMIT {limit}", params).fetchall()
