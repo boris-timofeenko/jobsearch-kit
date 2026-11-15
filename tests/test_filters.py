@@ -413,3 +413,13 @@ def test_hardware_skip_copies_are_deduplicated_too():
     hw = Job(id="d:2", source="s", company="Acme", title="QA", url="u", verdict="skip", reasons=[f.OFF_DOMAIN_REASON])
     lang = Job(id="d:3", source="s", company="Acme", title="QA", url="u", verdict="skip", reasons=["текст на немецком"])
     assert cli.dedup_eligible(live) and cli.dedup_eligible(hw) and not cli.dedup_eligible(lang)
+
+
+def test_salary_label_on_its_own_line_and_collective_minimum():
+    helsing = "What we offer\nCompetitive salary\nRelocation support\n: up to €2,500 and 4 weeks temporary accommodation"
+    assert f.parse_salary(helsing) is None
+    red_bull = ("For legal reasons we are obliged to disclose the minimum salary according to the collective agreement "
+                "for this position, which is EUR 2,986 gross per month. However, our attractive compensation package")
+    assert f.parse_salary(red_bull) is None
+    assert f.parse_salary("Wir bieten ein Mindestgehalt von EUR 4.155,24 brutto pro Monat") is None
+    assert round(f.parse_salary("Salary: €5,500 gross per month")) == 5500              # a plain salary still counts

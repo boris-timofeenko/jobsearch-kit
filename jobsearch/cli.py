@@ -340,7 +340,7 @@ def cmd_run(a):
             log("telegram: nothing new worth sending")
         else:
             silent = notify.quiet(tcfg.get("quiet_hours", ""), now_local())    # the nightly deep run stays silent
-            summary = report.run_summary(f"Прогон {now_local():%d.%m %H:%M} CET", len(seen), new_jobs, fresh, assessed,
+            summary = report.run_summary(f"Прогон {now_local():%d.%m %H:%M %Z}", len(seen), new_jobs, fresh, assessed,
                                          notes + run_notes(http, time.monotonic() - t0))
             ok = notify.telegram(summary, silent) if tcfg.get("summary_always", True) or fresh else True
             if fresh and notify.telegram_cards(None, fresh, db, silent):
@@ -504,7 +504,7 @@ def cmd_telegram_test(a):
     import os
     if not os.environ.get("TELEGRAM_BOT_TOKEN") or not os.environ.get("TELEGRAM_CHAT_ID"):
         sys.exit("нет TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID в .env")
-    ok = notify.telegram(f"✅ jobsearch на связи ({now_local():%d.%m %H:%M} CET). Тестовое сообщение.")
+    ok = notify.telegram(f"✅ jobsearch на связи ({now_local():%d.%m %H:%M %Z}). Тестовое сообщение.")
     print("test message:", "sent" if ok else "FAILED")
     if a.sample and ok:
         db = DB(DATA / "jobs.db")
@@ -643,11 +643,15 @@ def cmd_reanalyze(a):
             db.commit()      # short write transactions: the bot writes button clicks to the same SQLite
                              # (one 3-minute transaction on 24.09 made its clicks fail with "database is locked")
         j = row_to_job(r)
-        if not filters.is_relevant_title(j.title) and a.prune:
+        off_role = not filters.is_relevant_title(j.title)     # title_include / title_exclude changed since
+        if off_role and a.prune:
             db.c.execute("DELETE FROM jobs WHERE id=? AND status='new'", (j.id,))
             drop += 1
             continue
         safe_analyze(j, sponsors, cfg)
+        if off_role and j.verdict == "live":
+            j.verdict = "other"
+            j.reasons.append("заголовок больше не подходит под роль (title_include / title_exclude)")
         fp = j.fingerprint()
         db.c.execute("UPDATE jobs SET fingerprint=? WHERE id=?", (fp, j.id))
         orig = same_original(j, fps.get(fp, []), lambda i: texts[i])

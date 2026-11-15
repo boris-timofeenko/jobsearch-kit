@@ -73,6 +73,8 @@ NO_SPONSOR = re.compile(
 LOCAL_ONLY = re.compile(
     r"\b((must|should|need to|required to|have to) (be )?(based|located|living|residing|reside|live|resident) in|"
     r"(candidates|applicants) (must|should) (be )?(residents?|based|located|living) (of|in))\b[^.;\n]{0,40}", I)
+# "Must be located in or able to work within CEST time zone" asks for working hours, not for an address
+TIME_ZONE = re.compile(r"time ?zones?|\b(cet|cest|eet|eest|gmt|utc|wet)\b|\butc ?[+-]", I)
 # A "must live in …" requirement (heuristic match or the model's residency quote) closes a relocation-track job only
 # when it is about who may apply rather than where the job is: "only" next to candidates/residents, citizenship or an
 # existing permit (several languages, quotes are copied from postings), "EU residency", "outside … won't be considered",
@@ -164,9 +166,10 @@ def configure(profile):
     global LANG_MODE, CONTRACT, AGENCIES, PUBLIC_SECTOR, SALARY_MIN, REMOTE_OK, EU_OFFICES, OUTSOURCING
     role, target, cand = profile.get("role", {}), profile.get("target", {}), profile.get("candidate", {})
     countries = ([target["primary"]] if target.get("primary") else []) + list(target.get("countries") or [])
+    needs_visa = bool(cand.get("needs_visa", True))      # without a visa the IND register means nothing
     COUNTRIES = [{"code": c["code"], "name": c["name"], "regex": re.compile(c["location_regex"], I),
                   "floor": c.get("salary_floor_month", target.get("salary_floor_month")),
-                  "sponsor": c.get("sponsor_register", "none") == "ind"} for c in countries]
+                  "sponsor": needs_visa and c.get("sponsor_register", "none") == "ind"} for c in countries]
     COUNTRY_CODES = {c["code"] for c in COUNTRIES}
     PRIMARY = target["primary"]["code"] if target.get("primary") else ""
     # in_search_area keeps board postings in any target country; with no primary country nothing extra is needed
@@ -328,13 +331,21 @@ NOT_PAY_BEFORE = re.compile(r"(budget|allowance|bonus|relocation|learning|develo
                             r"stipend|voucher|gym|vergoeding|toelage|tegoed|omzet|turnover|revenue|umsatz|funding|raised|"
                             r"invest\w*|prime|indemnit\w*|chèque|ticket|meal)[^.\n]{0,40}$", I)
 NOT_PAY_AFTER = re.compile(r"^[\s,.]*(\d+\s*)?(miljoen|million|mln|mio|bn|billion|mld|milliard)", I)
+# The legal minimum of a collective agreement that Austrian postings must state ("minimum salary according to the
+# collective agreement … EUR 2,986. However, our package…"): a floor, not the offer. Checked 15.11 on a test setup for
+# Germany and Austria: Red Bull, Netconomy, Wien Energie were cut by the visa floor because of it.
+COLLECTIVE_MINIMUM = re.compile(r"(collective[^.\n]{0,20}agreement|kollektivvertrag|mindestgehalt|mindestentgelt|"
+                                r"minimum (annual |monthly )?(gross )?salary)[^.\n]{0,70}$", I)
 
 
 def parse_salary(text):
     """Return best-guess monthly gross (EUR) from free text, or None."""
     best = None
     for m in SAL.finditer(text):
-        if NOT_PAY_BEFORE.search(text[max(0, m.start() - 60):m.start()]) or NOT_PAY_AFTER.search(text[m.end():m.end() + 15]):
+        # a bold label ends up on its own line in the page text: "Relocation support\n: up to €2,500" (Helsing, 15.11)
+        before = re.sub(r"\n(?=\s*:)", " ", text[max(0, m.start() - 120):m.start()])
+        if NOT_PAY_BEFORE.search(before[-60:]) or COLLECTIVE_MINIMUM.search(before) \
+                or NOT_PAY_AFTER.search(text[m.end():m.end() + 15]):
             continue
         try:
             lo = float(re.sub(r"[.,]", "", m.group(1))) * (1000 if m.group(2) else 1)
@@ -546,10 +557,13 @@ def analyze(job, sponsors, cfg):
     else:
         job.track = "other"
     lm = None if m else LOCAL_ONLY.search(text)
-    if lm and not residency_blocks(lm.group(0), job.track, job.location):
-        reasons.append(f"просят жить в стране вакансии: «{lm.group(0).strip()[:60]}» — при переезде не помеха")
-    elif lm:
-        skip.append(f"без спонсорства: «{lm.group(0).strip()[:60]}»")
+    quote = lm.group(0).strip()[:60] if lm else ""
+    if lm and TIME_ZONE.search(lm.group(0)):
+        reasons.append(f"просят работать в часовом поясе: «{quote}»")
+    elif lm and not residency_blocks(lm.group(0), job.track, job.location):
+        reasons.append(f"просят жить в стране вакансии: «{quote}» — при переезде не помеха")
+    elif lm:     # "без спонсорства" is what it means for a visa; without one, the job is for residents elsewhere
+        skip.append(f"без спонсорства: «{quote}»" if NEEDS_VISA else f"только для живущих в другой стране: «{quote}»")
     job.reasons = skip + reasons
     job.score = max(0, min(100, score if not skip else min(score, 25)))
     if skip:

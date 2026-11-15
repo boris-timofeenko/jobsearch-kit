@@ -245,3 +245,23 @@ def test_init_and_check(tmp_path, monkeypatch, capsys):
     finally:
         if not had_env and env.exists():
             env.unlink()
+
+
+def test_reanalyze_retires_titles_the_role_no_longer_matches(tmp_path, monkeypatch):
+    """After title_exclude grows, stored postings with such titles stop being live; --prune deletes them instead."""
+    from jobsearch import cli
+    from jobsearch.db import DB
+    monkeypatch.setattr(cli, "DATA", tmp_path)
+    monkeypatch.setattr(cli, "make_sponsors", lambda cfg, http: None)
+    db = DB(tmp_path / "jobs.db")
+    desc = "We need a senior engineer for test automation with Playwright and TypeScript. " * 6
+    for jid, title in (("x:1", "Senior QA Automation Engineer"), ("x:2", "Salesforce Consultant")):
+        db.insert(Job(id=jid, source="x", company="Acme", title=title, url="u", location="Amsterdam, Netherlands",
+                      description=desc))
+    db.commit()
+    cli.main(["reanalyze"])
+    rows = {r["id"]: r for r in DB(tmp_path / "jobs.db").query("1=1")}
+    assert rows["x:1"]["verdict"] == "live"
+    assert rows["x:2"]["verdict"] == "other" and "больше не подходит под роль" in rows["x:2"]["reasons"]
+    cli.main(["reanalyze", "--prune"])
+    assert [r["id"] for r in DB(tmp_path / "jobs.db").query("1=1")] == ["x:1"]

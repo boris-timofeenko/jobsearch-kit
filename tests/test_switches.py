@@ -189,3 +189,29 @@ def test_init_wizard_writes_answers_into_switches(tmp_path, monkeypatch):
 def test_country_with_own_floor_inside_switches():
     p = use(countries=[{"code": "de", "salary_floor_month": 4225}, "nl"])
     assert p["target"]["primary"]["salary_floor_month"] == 4225 and p["target"]["countries"][0]["code"] == "nl"
+
+
+def test_eu_citizen_gets_no_ind_register_flags():
+    use(visa="not_needed", countries=["nl"])
+    assert not any(c["sponsor"] for c in f.COUNTRIES)
+    j = f.analyze(job(location="Amsterdam, Netherlands"), None, {})
+    assert not any("реестре IND" in r for r in j.reasons)
+
+
+def test_time_zone_is_not_an_address():
+    use(based_in="Poland")
+    text = "Remote role, React and TypeScript. Candidates must be located in or able to work within CEST time zone. " * 4
+    j = f.analyze(job(location="Remote - Europe", remote=True, description=text), None, {})
+    assert j.verdict == "live" and any(r.startswith("просят работать в часовом поясе") for r in j.reasons)
+    use(visa="not_needed", based_in="Poland")
+    j = f.analyze(job(location="Remote - Europe", remote=True,
+                      description="Remote role, React. Candidates must be based in Portugal for tax reasons. " * 4), None, {})
+    assert j.verdict == "skip" and j.reasons[0].startswith("только для живущих в другой стране")
+
+
+def test_remote_search_in_the_home_country():
+    p = use(goal="both", based_in="Poland")
+    locs = config.default_linkedin_locations(p)
+    assert locs[-1] == {"name": "Poland", "remote": True, "max_pages": 30, "queries": p["role"]["queries"][:4]}
+    assert "Poland" not in [l["name"] for l in config.default_linkedin_locations(use(goal="relocate", based_in="Poland"))]
+    assert [l["name"] for l in config.default_linkedin_locations(use(goal="both", based_in="Georgia"))][-1] == "European Union"

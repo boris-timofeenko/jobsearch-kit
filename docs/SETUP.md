@@ -205,6 +205,7 @@ Opus в `my/config.yaml`: `llm: {model_cli_country: opus}`.
 
 ```bash
 .venv/bin/python -m jobsearch report --hours 72    # → data/reports/latest.html
+.venv/bin/python -m jobsearch report --hours 72 --unchecked   # если модель ещё не подключена
 open data/reports/latest.html                      # Linux: xdg-open
 ```
 
@@ -239,6 +240,7 @@ open data/reports/latest.html                      # Linux: xdg-open
 ```bash
 .venv/bin/python -m jobsearch check --fast
 .venv/bin/python -m jobsearch reanalyze      # пересчитать всё уже собранное; оценки модели сохраняются
+.venv/bin/python -m jobsearch assess --days 3  # оценить моделью то, что собрано без неё
 ```
 
 ## 9. Расписание
@@ -259,8 +261,11 @@ scripts/install_launchd.sh 9 13 18 --bot
 
 ```
 5 9,13,18 * * * /home/anna/jobsearch/scripts/run-local.sh
-@reboot cd /home/anna/jobsearch && .venv/bin/python -m jobsearch bot >> data/logs/bot.log 2>&1
+@reboot cd /home/anna/jobsearch && PATH=$HOME/.local/bin:$PATH .venv/bin/python -m jobsearch bot >> data/logs/bot.log 2>&1
 ```
+
+`PATH` с `~/.local/bin` нужен боту, чтобы найти `claude` для кнопки «CV под вакансию».
+
 
 ### Свой сервер (VPS)
 

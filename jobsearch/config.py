@@ -294,7 +294,8 @@ def cv_source(cfg):
 # ------------------------------------------------------------------ sources derived from the profile
 def default_linkedin_locations(profile):
     """Primary country with every query and up to 100 pages; each extra country and the remote EU search with the
-    first four queries and 50 pages (their result lists are long and repeat between queries)."""
+    first four queries and 50 pages (their result lists are long and repeat between queries); remote in the country
+    the candidate lives in (candidate.based_in) with the same four and 30 pages."""
     t, queries = profile["target"], (profile.get("role") or {}).get("queries") or []
     short = queries[:4]
     out = []
@@ -304,6 +305,13 @@ def default_linkedin_locations(profile):
         out.append({"name": c["name"], "remote": False, "max_pages": 50, "queries": short})
     if t.get("remote", True):
         out.append({"name": "European Union", "remote": True, "max_pages": 50, "queries": short})
+        # the EU-wide search stops at 1000 cards and loses remote jobs open to residents of one country; the one
+        # where the candidate lives gets its own search (a test setup for Warsaw, 15.11: 46 live postings from it)
+        from .filters import EU_LOC
+        home = str((profile.get("candidate") or {}).get("based_in") or "").strip()
+        # EU/EEA only: "Georgia" on LinkedIn is the US state, Serbia or Kazakhstan give local jobs, not remote ones
+        if home and EU_LOC.fullmatch(home) and home.lower() not in {l["name"].lower() for l in out}:
+            out.append({"name": home, "remote": True, "max_pages": 30, "queries": short})
     return out
 
 
