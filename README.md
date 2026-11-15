@@ -6,9 +6,10 @@
 Telegram приходит только то, что прошло. Всё складывается в SQLite, под каждой карточкой в боте кнопки «Откликнулся
 / Позже / Скрыть».
 
-Сделано для поиска работы с переездом в ЕС (или remote из Европы) и рассчитано на IT-роли: в комплекте пресеты для
-QA, backend, frontend, mobile, DevOps, data и product. Страна, роль, стек, уровень и всё остальное личное лежат в
-одном файле `my/profile.yaml`. Код у всех общий.
+Сделано для поиска работы с переездом или remote и рассчитано на IT-роли: в комплекте пресеты для QA, backend,
+frontend, mobile, DevOps, data и product. Страны — любые из каталога (ЕС, Великобритания, Сербия, Россия и СНГ,
+Кавказ, Турция, ОАЭ, Израиль, США, Канада) или свои. Страна, роль, стек, уровень и всё остальное личное лежат
+в одном файле `my/profile.yaml`. Код у всех общий.
 
 Так выглядит карточка в Telegram:
 
@@ -54,13 +55,14 @@ init` спросит роль и переключатели прямо в тер
 ```yaml
 switches:
   goal: both                    # relocate — только переезд · remote — только удалёнка · both
-  countries: [de, nl]           # страны переезда, первая — основная
-  eu_offices: true              # офис в другой стране ЕС тоже рассматриваю
-  visa: needed                  # not_needed — есть гражданство или ВНЖ ЕС
+  countries: [de, nl]           # страны переезда, первая — основная: ЕС, gb, rs, ru, kz, ge, am, ae, us…
+  offices: [eu]                 # офис в других странах региона тоже подходит: eu · europe · cis · world · коды стран · none
+  visa: needed                  # not_needed — есть гражданство или ВНЖ в этих странах
   languages: [English, Russian]
   other_language: skip          # вакансия требует другой язык: skip · flag (показать с пометкой) · any
   level: senior
-  salary_min: visa              # порог визы страны · свой минимум €/мес · 0
+  salary_currency: EUR          # валюта сумм: EUR · RUB · USD…
+  salary_min: visa              # порог визы страны · свой минимум в месяц · 0
   contract: penalize            # B2B и фриланс: skip · penalize · ok
   outsourcing: penalize         # аутсорс и аутстафф: skip · penalize · ok
   agencies: penalize            # рекрутеры: skip · penalize · ok
@@ -86,14 +88,16 @@ LinkedIn ─┐
 агрегаторы┘                  (полный текст) (skip с причиной)      (fit 0–10 + поправки)
 ```
 
-1. **Сбор.** LinkedIn ищет по `role.queries` в основной стране, дополнительных странах и remote по Европе. Доски
-   компаний — публичные API Greenhouse, Lever, Ashby, Recruitee, Workable, SmartRecruiters, Teamtailor, Personio,
-   Workday и корпоративные сайты (SuccessFactors, Phenom). Плюс агрегаторы: Remotive, RemoteOK, We Work Remotely,
-   Himalayas, Working Nomads, Landing.jobs, Arbeitnow, Jobicy, The Muse, Workable search, Adzuna, в глубоком прогоне
-   hiring.cafe (на сервере — ночью). И Telegram-каналы с вакансиями из твоего списка: открытые читаются без
-   аккаунта, посты модель разбирает на отдельные вакансии.
+1. **Сбор.** LinkedIn ищет по `role.queries` в основной стране, дополнительных странах и remote (по ЕС, если ты в
+   Европе или СНГ, иначе в стране, где живёшь). Доски компаний — публичные API Greenhouse, Lever, Ashby, Recruitee,
+   Workable, SmartRecruiters, Teamtailor, Personio, Workday и корпоративные сайты (SuccessFactors, Phenom). Плюс
+   агрегаторы: Remotive, RemoteOK, We Work Remotely, Himalayas, Working Nomads, Landing.jobs, Arbeitnow, Jobicy,
+   The Muse, Workable search, Adzuna, Хабр Карьера (сама включается для России, Беларуси и Казахстана), в глубоком
+   прогоне hiring.cafe (на сервере — ночью). И Telegram-каналы с вакансиями из твоего списка: открытые читаются без
+   аккаунта, посты модель разбирает на отдельные вакансии. hh.ru не подключён: с апреля 2026 его API ищет вакансии
+   только с токеном работодателя.
 2. **Эвристики** бесплатно отсекают очевидное и раскладывают вакансии по трекам: основная страна, дополнительные
-   страны, офис в другой стране ЕС, remote. У каждого отсева записана причина, ничего не удаляется.
+   страны, офис в другой стране региона (`offices`), remote. У каждого отсева записана причина, ничего не удаляется.
 3. **Модель** читает полный текст и отвечает структурой: та ли это роль, fit 0–10 по совпадению стека и уровня,
    обязательный язык, ограничения по резидентству, виза, режим работы, тип работодателя. Страну, визу, аутсорс и
    контракт модель в fit не учитывает: это делает код поправками, которые видны в карточке.

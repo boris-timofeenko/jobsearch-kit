@@ -1,4 +1,4 @@
-"""Public job APIs and job-board searches for the target-country and remote-EU tracks.
+"""Public job APIs and job-board searches for the target-country, office-region and remote tracks.
 
 What to search for comes from the profile (configure): role.queries (job titles), role.keywords (short words),
 role.categories (the board's own category names where a board is browsed by category)."""
@@ -27,6 +27,8 @@ def configure(cfg):
     SEARCH_COUNTRIES = tuple(c["name"] for c in countries)
     PRIMARY = t.get("primary") or {}
     HC_CONFIG = dict(cfg.get("hiringcafe") or {})
+    from . import habr
+    habr.configure(cfg)
     from ..config import catalog
     for c in list(catalog().values()) + countries:
         if c.get("geo") and c.get("name") not in _GEO:
@@ -891,3 +893,8 @@ def detail_hiringcafe(http, job):
 
 AGGREGATORS["hiringcafe"] = hiringcafe
 _ats.DETAIL_FETCHERS["hiringcafe"] = detail_hiringcafe
+
+from . import habr as _habr  # noqa: E402
+
+AGGREGATORS["habr"] = _habr.habr
+_ats.DETAIL_FETCHERS["habr"] = _ats.detail_page

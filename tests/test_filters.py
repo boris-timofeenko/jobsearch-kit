@@ -112,7 +112,7 @@ def test_country_and_eu_tracks():
         f.analyze(j, None, {})
     assert (be.track, be.verdict) == ("be", "live")
     assert (de.track, de.verdict) == ("de", "live")
-    assert (eu.track, eu.verdict) == ("eu", "live"), (eu.track, eu.reasons)
+    assert (eu.track, eu.verdict) == ("region", "live"), (eu.track, eu.reasons)
     assert (us.track, us.verdict) == ("other", "other")
     assert both.track == "nl"                   # a copy merged in from the Netherlands makes the posting an NL one
 
@@ -152,8 +152,8 @@ def test_country_and_eu_tracks_are_llm_candidates():
     load_cfg()
     mk = lambda i, track, score: Job(id=f"c:{i}", source="x", company="Acme", title="Senior QA", url="u", description="x" * 400,
                                      track=track, verdict="live", score=score)
-    cands = llm.select_candidates([mk(1, "be", 30), mk(2, "de", 30), mk(3, "eu", 60), mk(4, "eu", 40), mk(5, "remote", 60), mk(6, "other", 90)], {})
-    assert [c.track for c in cands] == ["be", "de", "eu", "remote"]
+    cands = llm.select_candidates([mk(1, "be", 30), mk(2, "de", 30), mk(3, "region", 60), mk(4, "region", 40), mk(5, "remote", 60), mk(6, "other", 90)], {})
+    assert [c.track for c in cands] == ["be", "de", "region", "remote"]
 
 
 def test_location_penalty_applied_once_after_llm():
@@ -163,7 +163,7 @@ def test_location_penalty_applied_once_after_llm():
     base = dict(source="x", company="Acme", title="Senior QA", url="u", description="x" * 400, verdict="live", score=60)
     a = llm.Assessment(is_software_qa=True, fit=8, verdict="apply", seniority="senior", automation_level="automation",
                        work_mode="hybrid", sponsorship="unknown", is_agency=False)
-    nl, de, eu = Job(id="p:1", track="nl", **base), Job(id="p:2", track="de", **base), Job(id="p:3", track="eu", **base)
+    nl, de, eu = Job(id="p:1", track="nl", **base), Job(id="p:2", track="de", **base), Job(id="p:3", track="region", **base)
     for j in (nl, de, eu):
         llm.apply_assessment(j, a)
     assert (nl.llm_fit, de.llm_fit, eu.llm_fit) == (9, 7, 6)                    # NL +1, BE/FR/DE −1, EU −2
@@ -180,7 +180,7 @@ def test_spanish_de_is_not_germany():
     k = Job(id="t:pt", location="Vila Nova de Gaia, Porto, Portugal", **base)
     for x in (j, k):
         f.analyze(x, None, {})
-    assert j.track == "eu" and k.track == "eu", (j.track, k.track)
+    assert j.track == "region" and k.track == "region", (j.track, k.track)
 
 
 def test_fit_adjustments_and_rescue_prefixes():
@@ -194,7 +194,7 @@ def test_fit_adjustments_and_rescue_prefixes():
     llm.apply_assessment(j, a)
     assert j.llm_fit == 9, j.reasons                       # 7 +1 NL +1 low competition; no visa words in the text
     k = Job(id="f:2", source="linkedin", company="Acme", title="Senior QA", url="u", description="x" * 400,
-            track="eu", verdict="live", score=60, applicants=300, reasons=["агентство/рекрутер", "почасовая/дневная ставка или контракт: релокации обычно не подразумевает"])
+            track="region", verdict="live", score=60, applicants=300, reasons=["агентство/рекрутер", "почасовая/дневная ставка или контракт: релокации обычно не подразумевает"])
     llm.apply_assessment(k, llm.Assessment(fit=8, is_agency=True))
     assert k.llm_fit == 2, k.reasons                       # 8 -2 location -1 agency -2 contract -1 competition
     # rescue: only the hardware rule counts as a skip reason; soft flags must not block it
@@ -202,7 +202,7 @@ def test_fit_adjustments_and_rescue_prefixes():
             track="nl", verdict="skip", score=20, reasons=[f.OFF_DOMAIN_REASON, "объявление двуязычное (нидерландском + английский): язык решает LLM", "локация −0"])
     assert llm.rescuable(h)
     # sponsorship "no" for on-site elsewhere in the EU is a skip
-    e = Job(id="f:4", source="linkedin", company="Acme", title="Senior QA", url="u", description="x" * 400, track="eu", verdict="live", score=60)
+    e = Job(id="f:4", source="linkedin", company="Acme", title="Senior QA", url="u", description="x" * 400, track="region", verdict="live", score=60)
     llm.apply_assessment(e, llm.Assessment(fit=8, sponsorship="no"))
     assert e.verdict == "skip"
 
@@ -312,7 +312,7 @@ def test_product_company_ranks_above_outstaff_recruiter_and_contract():
     from jobsearch import llm
     from jobsearch.cli import load_cfg
     load_cfg()
-    mk = lambda i, desc="x" * 400, track="eu": Job(id=f"e:{i}", source="linkedin", company="Acme", title="Senior QA",
+    mk = lambda i, desc="x" * 400, track="region": Job(id=f"e:{i}", source="linkedin", company="Acme", title="Senior QA",
                                                      url="u", description=desc, track=track, verdict="live", score=60)
     prod, cons, rec, outc, visa_c, bairesdev = mk(1), mk(2), mk(3), mk(4), mk(5, "We sponsor your visa. " * 20), mk(6, track="remote")
     llm.apply_assessment(prod, llm.Assessment(fit=6, employer_type="direct", employment="employee"))
@@ -348,7 +348,7 @@ def test_living_in_the_job_country_is_not_a_blocker_when_relocating():
     assert remote.verdict == "skip" and remote.reasons[0].startswith("без спонсорства"), remote.reasons
     job = lambda i, track, **kw: Job(id=f"q:{i}", source="linkedin", company="Acme", title="Senior QA", url="u",
                                      description="x" * 400, track=track, verdict="live", score=60, **kw)
-    soft, hard, rem, it, res = job(1, "de"), job(2, "eu"), job(3, "remote"), job(4, "eu"), job(5, "fr")
+    soft, hard, rem, it, res = job(1, "de"), job(2, "region"), job(3, "remote"), job(4, "region"), job(5, "fr")
     llm.apply_assessment(res, llm.Assessment(fit=7, residency_restriction="Open only to residents of France", work_mode="onsite"))
     assert res.verdict == "skip", res.reasons
     llm.apply_assessment(soft, llm.Assessment(fit=7, residency_restriction="remote only within Germany", work_mode="remote"))
@@ -358,14 +358,14 @@ def test_living_in_the_job_country_is_not_a_blocker_when_relocating():
     assert soft.verdict == "live" and any(r.startswith("LLM: просят жить") for r in soft.reasons), soft.reasons
     assert (hard.verdict, rem.verdict, it.verdict) == ("skip", "skip", "skip")
     blocks = lambda q, track, loc: f.residency_blocks(q, track, loc)
-    assert not blocks("The candidate has to be in Portugal and open to a hybrid position.", "eu", "Lisbon, Portugal")
+    assert not blocks("The candidate has to be in Portugal and open to a hybrid position.", "region", "Lisbon, Portugal")
     assert not blocks("We live remote-first within Germany", "de", "Berlin, Germany")
-    assert blocks("This is a fully remote role for candidates based in Poland or Portugal.", "eu", "Warsaw, Poland")
-    assert blocks("EU residency", "eu", "Warsaw, Poland")
-    assert blocks("If the applicant is permanently present outside of Portugal, Veeam reserves the right", "eu", "Lisbon, Portugal")
-    assert blocks("role associated with Milan office; open to candidates based in Portugal or the UK", "eu", "Milan, Italy")
+    assert blocks("This is a fully remote role for candidates based in Poland or Portugal.", "region", "Warsaw, Poland")
+    assert blocks("EU residency", "region", "Warsaw, Poland")
+    assert blocks("If the applicant is permanently present outside of Portugal, Veeam reserves the right", "region", "Lisbon, Portugal")
+    assert blocks("role associated with Milan office; open to candidates based in Portugal or the UK", "region", "Milan, Italy")
     assert blocks("Fully remote, full-time work from Slovenia.", "fr", "Paris, France")
-    assert blocks("based in Bengaluru in a hybrid work model", "eu", "Kraków, Poland")
+    assert blocks("based in Bengaluru in a hybrid work model", "region", "Kraków, Poland")
 
 
 def test_fit_has_no_ceiling():
@@ -423,3 +423,14 @@ def test_salary_label_on_its_own_line_and_collective_minimum():
     assert f.parse_salary(red_bull) is None
     assert f.parse_salary("Wir bieten ein Mindestgehalt von EUR 4.155,24 brutto pro Monat") is None
     assert round(f.parse_salary("Salary: €5,500 gross per month")) == 5500              # a plain salary still counts
+
+
+def test_salaries_in_roubles_and_dollars_are_read_in_euros():
+    from pytest import approx
+    from jobsearch.cli import load_cfg
+    load_cfg()
+    rub, usd = f.RATES["RUB"], f.RATES["USD"]
+    assert f.parse_salary("от 230 000 до 250 000 ₽ на руки") == approx(250000 * rub)
+    assert f.parse_salary("250к руб.") == approx(250000 * rub)
+    assert f.parse_salary("$150,000 – $180,000") == approx(180000 / 12 * usd)        # a yearly figure
+    assert f.parse_salary("Бюджет на обучение 100 000 ₽, выручка 3 млрд ₽") is None

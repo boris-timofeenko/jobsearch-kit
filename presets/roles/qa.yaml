@@ -27,11 +27,13 @@ role:
     - '\b(qa|sdet|test(s|ing|er)?|tests?\b|quality (assurance|engineer|automation|analyst)|software quality)'
     - '\b(test automation|automation (test|qa|engineer)|engineer in test|quality engineering|softwaretester|\w+tester)\b'
     - '\b(kwaliteit|testautomati|testengineer|testanalist|testconsultant)'
+    - '(тестировщик\w*|тестировани\w*|автотест\w*)'      # по-русски: Хабр Карьера, Telegram-каналы
   title_exclude:
     - '\b(a/?b test|penetration|pentest|quality manager|product manager|account|sales|marketing|recruiter|copywriter|designer|nurse|clinical|laborator|lab technician|food|chemist|welder|electrical|mechanical|civil|hvac)\b'
     - '\b(devops|network|infrastructure|sre|site reliability|risk|compliance|rpa|process automation|workflow automation|marketing automation|cloud automation|data engineer|data analyst|business analyst|financial analyst)\b'
     - '\b(release manager|devsecops|functioneel|tijdelijk|qaqc|mb testing|board testing|ict beheer|audit|technician|seal testing|test bench|testsysteme|canoe|security testing|dast)\b'
     - '\b(do not apply|test job|testjob)\b'
+    - '(пентест\w*|проникновени\w*|лаборант\w*|контрол[её]р\w*|\b1[сc]\b|наставник\w*|ментор\w*|преподавател\w*|автор\w* курс\w*)'
   title_boost:                    # слова в заголовке, отмечающие ядро роли: +баллы к score
     '\b(sdet|automation|automatiser|engineer in test)\b': 8
 

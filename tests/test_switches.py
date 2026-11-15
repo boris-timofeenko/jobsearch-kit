@@ -4,10 +4,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from jobsearch import config, filters as f, llm
+from jobsearch import config, filters as f, llm, report
 from jobsearch.models import Job
 
 ROOT = Path(__file__).resolve().parent.parent
+RATES = config.read_yaml(ROOT / "config.yaml")["currency_rates"]
 
 
 @pytest.fixture(autouse=True)
@@ -21,9 +22,10 @@ def use(**switches):
     p = yaml.safe_load((ROOT / "presets" / "profile.example.yaml").read_text())
     p.update(yaml.safe_load((ROOT / "presets" / "roles" / "backend.yaml").read_text()))
     p["switches"] = {**(p.get("switches") or {}), **switches}
-    config.normalize_profile(p)
+    config.normalize_profile(p, RATES)
     f.configure(p)
     llm.configure(p)
+    report.configure(p)
     return p
 
 
@@ -60,12 +62,15 @@ def test_relocation_goal_drops_remote_only_boards(tmp_path):
     assert "remotive" not in cfg["aggregators"] and "arbeitnow" in cfg["aggregators"]
 
 
-def test_eu_offices_off():
-    use(eu_offices=False)
-    j = f.analyze(job(location="Madrid, Spain"), None, {})
-    assert j.track == "eu" and j.verdict == "other"
-    use(eu_offices=True)
-    assert f.analyze(job(location="Madrid, Spain"), None, {}).verdict == "live"
+def test_offices_off_and_the_old_eu_offices_switch():
+    def madrid_office(**switches):
+        use(**switches)
+        j = f.analyze(job(location="Madrid, Spain"), None, {})
+        return j.track, j.verdict
+    for off in (dict(offices="none"), dict(offices=[]), dict(offices=None, eu_offices=False)):
+        assert madrid_office(**off) == ("other", "other"), off
+    for on in (dict(offices=["eu"]), dict(offices=None, eu_offices=True)):
+        assert madrid_office(**on) == ("region", "live"), on
 
 
 def test_other_language_modes():
@@ -161,8 +166,8 @@ def test_init_wizard_writes_answers_into_switches(tmp_path, monkeypatch):
     from jobsearch import cli
     cv = tmp_path / "Anna CV.docx"
     cv.write_bytes(b"PK fake docx")
-    answers = iter(["data", "relocate", "de, es", "n", "not_needed", "Spain", "English, Spanish, German", "flag", "",
-                    "4500", "", "ok", "", "skip", "", "prefer", str(cv)])
+    answers = iter(["data", "relocate", "de, es", "none", "not_needed", "Spain", "English, Spanish, German", "flag", "",
+                    "", "4500", "", "ok", "", "skip", "", "prefer", str(cv)])
     monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
     monkeypatch.setattr(config, "MY", tmp_path / "my")
     env = ROOT / ".env"
@@ -175,7 +180,7 @@ def test_init_wizard_writes_answers_into_switches(tmp_path, monkeypatch):
     text = (tmp_path / "my" / "profile.yaml").read_text()
     p = yaml.safe_load(text)
     sw = p["switches"]
-    assert (sw["goal"], sw["countries"], sw["eu_offices"], sw["visa"]) == ("relocate", ["de", "es"], False, "not_needed")
+    assert (sw["goal"], sw["countries"], sw["offices"], sw["visa"]) == ("relocate", ["de", "es"], [], "not_needed")
     assert (sw["languages"], sw["other_language"], sw["level"], sw["salary_min"]) == (
         ["English", "Spanish", "German"], "flag", "senior", 4500)
     assert (sw["contract"], sw["agencies"], sw["ai"], sw["cv"]) == ("ok", "skip", "prefer", "my/cv.docx")
@@ -218,8 +223,8 @@ def test_remote_search_in_the_home_country():
 
 
 def test_remote_only_goal_hides_offices_everywhere():
-    p = use(goal="remote", eu_offices=True)
-    assert not p["prefs"]["eu_offices"] and any("eu_offices не используется" in n for n in p["_notes"])
+    p = use(goal="remote", offices=["eu"])
+    assert p["prefs"]["offices"] == [] and any("offices не используется" in n for n in p["_notes"])
     assert f.analyze(job(location="Madrid, Spain"), None, {}).verdict == "other"
 
 
@@ -271,14 +276,14 @@ def test_empty_title_lists_mean_empty():
     assert f.STACK == []
 
 
-def test_clashes_with_goal_and_eu_offices_are_noted():
+def test_clashes_with_goal_and_offices_are_noted():
     p = yaml.safe_load((ROOT / "presets" / "profile.example.yaml").read_text())
     p.update(yaml.safe_load((ROOT / "presets" / "roles" / "backend.yaml").read_text()))
-    p["switches"].update(goal="relocate", eu_offices=False)
+    p["switches"].update(goal="relocate", offices="none")
     p["target"].update(remote=True, eu_offices=True)
     config.normalize_profile(p)
     assert any("switches.goal перекрывает remote" in n for n in p["_notes"])
-    assert any("switches.eu_offices перекрывает eu_offices" in n for n in p["_notes"])
+    assert any("switches.offices перекрывает offices: ['eu'] → []" in n for n in p["_notes"])
 
 
 def test_companies_example_takes_appended_lines(tmp_path):
@@ -286,3 +291,50 @@ def test_companies_example_takes_appended_lines(tmp_path):
     f_.write_text((ROOT / "presets" / "companies.example.yaml").read_text()
                   + '- {name: "Mollie", ats: ashby, slug: mollie}   # 48 jobs\n')
     assert config.load_companies([str(f_)]) == [{"name": "Mollie", "ats": "ashby", "slug": "mollie"}]
+
+
+# ------------------------------------------------------------------ countries outside the EU
+RUSSIAN_POSTING = "Ищем Python-разработчика в команду платежей: сервисы на FastAPI, PostgreSQL и Kafka. " * 4
+
+
+def test_friend_moving_within_russia_reads_russian_postings_in_roubles():
+    p = use(countries=["ru"], visa="not_needed", based_in="Russia", languages=["Russian", "English"],
+            salary_currency="RUB", salary_min=200000, offices=None)
+    moscow = f.analyze(job(title="Python-разработчик", location="Москва, Россия", description=RUSSIAN_POSTING,
+                           salary_text="от 250 000 до 300 000 ₽"), None, {})
+    kazan = f.analyze(job(title="Python-разработчик", location="Казань, Россия", description=RUSSIAN_POSTING,
+                          salary_text="до 150 000 ₽"), None, {})
+    assert (moscow.track, moscow.verdict, moscow.lang) == ("ru", "live", "ru"), moscow.reasons
+    assert kazan.reasons[0] == "зарплата ~150 000 ₽/мес < порога 200 000 ₽ (свой минимум)"
+    assert f.analyze(job(location="Madrid, Spain"), None, {}).track == "other"    # by default no EU offices for Russia
+    assert config.country_aggregators(p) == ["habr"]
+    assert "Рабочая виза в целевых странах кандидату не нужна" in llm.SYSTEM and "ЕС" not in llm.GOAL
+
+
+def test_russian_text_is_unreadable_without_russian():
+    use(languages=["English"])
+    j = f.analyze(job(title="Python-разработчик", description=RUSSIAN_POSTING), None, {})
+    assert j.verdict == "skip" and "текст на русском" in j.reasons
+
+
+def test_offices_in_other_regions_and_countries():
+    use(countries=["rs"], offices=["cis", "ae"])
+    track = lambda loc: f.analyze(job(location=loc), None, {}).track
+    assert [track(x) for x in ("Белград", "Tbilisi, Georgia", "Dubai, United Arab Emirates", "Berlin, Germany")] \
+        == ["rs", "region", "region", "other"]
+    assert report.TRACK_RU["region"] == "🌍 Офис или гибрид: СНГ и Кавказ, ОАЭ"
+
+
+def test_remote_postings_follow_where_the_candidate_lives():
+    remote = lambda loc: f.analyze(job(location=loc, remote=True), None, {}).track
+    p = use(goal="remote", based_in="United States")
+    assert (remote("Remote - US"), remote("Remote - Europe")) == ("remote", "other")
+    assert [x["name"] for x in config.default_linkedin_locations(p)] == ["United States"]
+    use(goal="remote", based_in="Georgia")
+    assert (remote("Remote - US"), remote("Remote, EMEA"), remote("Remote, Москва")) == ("other", "remote", "remote")
+
+
+def test_living_in_the_job_city_outside_the_eu_is_not_a_blocker():
+    use(countries=["ae"])
+    assert not f.residency_blocks("Candidates must be based in Dubai", "ae", "Dubai, United Arab Emirates")
+    assert f.residency_blocks("Candidates must be based in India", "ae", "Dubai, United Arab Emirates")

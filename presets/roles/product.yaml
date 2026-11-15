@@ -20,10 +20,12 @@ role:
 
   title_include:
     - '\b(product (manager|owner|lead)|head of product|director of product|vp,? product|cpo|productmanager|produktmanager)\b'
+    - '(продакт[- ]?менеджер|продакт[- ]?оунер|менеджер продукта|владелец продукта|руководитель продукта|директор по продукту)'      # по-русски: Хабр Карьера, Telegram-каналы
   title_exclude:
     - '\b(product marketing|product designer|product engineer|product analyst|product support|product specialist|sales|account|project manager|scrum master)\b'
     - '\b(fmcg|food|beverage|packaging|pharma|medical device|cosmetics|fashion buyer|category manager)\b'
     - '\b(do not apply|test job|testjob)\b'
+    - '(маркетолог\w*|продуктов\w* аналитик|проджект\w*|наставник\w*|ментор\w*|преподавател\w*|автор\w* курс\w*)'
   title_boost:
     '\b(product (manager|owner|lead))\b': 6
 

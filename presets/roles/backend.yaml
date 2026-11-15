@@ -23,11 +23,13 @@ role:
     - '\b(python|go|golang|java|kotlin|scala|node(\.?js)?|php|ruby|rails|django|\.net|c#|elixir|rust)\b[^,|]{0,20}\b(engineer|developer|dev)\b'
     - '\b(software (engineer|developer)|full[- ]?stack|softwareentwickler)\b'
     - '\b(backend|back-end|java|python|php|golang|go|software)[- ]?entwickler'      # немецкие заголовки
+    - '(backend|бэкенд|бекенд|серверн\w*|python|go|golang|java|kotlin|scala|node(\.?js)?|php|ruby|c#|\.net|rust)[- ]?(разработчик|программист)|(разработчик|программист)\w*[^,|]{0,20}\b(backend|бэкенд|бекенд|python|go|golang|java|kotlin|scala|node|php|ruby|c#|\.net|rust)\b'      # по-русски: Хабр Карьера, Telegram-каналы
   title_exclude:
     - '\b(front[- ]?end|frontend|ios|android|mobile|flutter|react native|qa|tester|test automation|sdet|engineer in test)\b'
     - '\b(devops|sre|site reliability|data (engineer|scientist|analyst)|machine learning|ml engineer|embedded|firmware|hardware|electrical|mechanical)\b'
     - '\b(sales|support|customer|solutions? (engineer|architect)|presales|pre-sales|recruiter|designer|marketing|product manager|account|game|unity|unreal|salesforce|sap|servicenow|dynamics)\b'
     - '\b(do not apply|test job|testjob)\b'
+    - '(фронтенд|верстальщик|мобильн\w*|тестировщик\w*|\b1[сc]\b|битрикс|наставник\w*|ментор\w*|преподавател\w*|автор\w* курс\w*|тестировани\w*|аналитик\w*|bitrix)'
   title_boost:
     '\b(back[- ]?end|platform|api)\b': 8
 

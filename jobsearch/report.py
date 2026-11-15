@@ -2,19 +2,23 @@ import html
 from datetime import datetime
 from pathlib import Path
 
-TRACK_RU = {"eu": "🇪🇺 Другие страны ЕС (on-site / hybrid)",
-            "remote_nl": "🇳🇱🌍 Remote EU у компаний с NL-юрлицом в реестре IND",
-            "remote": "🌍 Remote EU", "other": "Прочее"}
-TRACK_ORDER = {"eu": 1, "remote_nl": 2, "remote": 3, "other": 4, "": 4, None: 4}
+TRACK_RU = {"region": "🇪🇺 Другие страны ЕС (офис / гибрид)",
+            "remote_nl": "🇳🇱🌍 Remote у компаний с NL-юрлицом в реестре IND",
+            "remote": "🌍 Remote", "other": "Прочее"}
+TRACK_ORDER = {"region": 1, "remote_nl": 2, "remote": 3, "other": 4, "": 4, None: 4}
 PRIMARY = ""               # track code of the primary country
 SPONSOR_CHECK = False      # IND register is consulted (a Dutch target and the candidate needs a visa)
 
 
 def configure(profile):
-    """Track names and order from the profile: primary country first, then the extra countries, EU, remote."""
+    """Track names and order from the profile: primary country first, then the extra countries, office regions,
+    remote."""
     global PRIMARY, SPONSOR_CHECK
+    from .config import offices_names
     t = profile.get("target", {})
     primary = t.get("primary")
+    TRACK_RU["region"] = ("🇪🇺 Другие страны ЕС (офис / гибрид)" if t.get("offices", ["eu"]) == ["eu"] else
+                          f"🌍 Офис или гибрид: {offices_names(t)}")
     SPONSOR_CHECK = (profile.get("candidate") or {}).get("needs_visa", True) and any(
         c.get("sponsor_register") == "ind" for c in ([primary] if primary else []) + list(t.get("countries") or []))
     PRIMARY = primary["code"] if primary else ""
@@ -68,7 +72,8 @@ STATUS_RU = {"new": "новая", "applied": "откликнулся", "rejected
 
 
 def fmt_salary(r):
-    return f"€{r['salary_month']:.0f}/мес" if r["salary_month"] else ""
+    from .filters import money          # in the person's currency (switches.salary_currency)
+    return f"{money(r['salary_month'])}/мес" if r["salary_month"] else ""
 
 
 def telegram_card(r):

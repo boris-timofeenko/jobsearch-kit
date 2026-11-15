@@ -4,17 +4,22 @@
 # ─── Переключатели ─────────────────────────────────────────────────────────────────────────────────────────────
 # Короткие ответы, которых хватает, чтобы начать. Всё остальное ниже — описание тебя и роли для модели.
 switches:
-  goal: both                    # relocate — только переезд · remote — только удалёнка · both — переезд и remote по Европе
-  countries: [nl, de]           # страны переезда, первая — основная: nl de be fr es pt ie at pl cz se dk fi it lu
-  eu_offices: true              # офис в другой стране ЕС тоже рассматриваю (отдельный трек, ниже в списке)
-  visa: needed                  # needed — нужна рабочая виза · not_needed — гражданство или ВНЖ ЕС
+  goal: both                    # relocate — только переезд · remote — только удалёнка · both — переезд и remote
+  countries: [nl, de]           # страны переезда, первая — основная. Коды из presets/countries.yaml: ЕС — nl de be fr
+                                #   es pt ie at pl cz se dk fi it lu cy; рядом — ch no gb rs me tr; СНГ и Кавказ — ru by
+                                #   kz uz kg am ge az; дальше — ae il us ca
+  offices: [eu]                 # офис или гибрид в других странах, куда тоже готов переехать (отдельный трек, ниже в
+                                #   списке): eu · europe · cis (СНГ и Кавказ) · middle_east · americas · asia · world ·
+                                #   коды стран · none. По умолчанию eu, если основная страна в ЕС, иначе none
+  visa: needed                  # needed — нужна рабочая виза · not_needed — гражданство или ВНЖ в этих странах
   based_in: Georgia             # где живёшь сейчас (по-английски): remote «только для жителей» этой страны подходит
   languages: [English, Russian] # на каких языках можешь работать
   other_language: skip          # вакансия требует язык не из списка: skip — отсеять · flag — показать с пометкой ·
                                 #   any — не смотреть на язык вообще (и объявления на местном языке тоже пойдут к модели)
   level: senior                 # junior · mid · senior · lead
-  salary_min: visa              # visa — порог визы страны · число — свой минимум, €/мес гросс · 0 — не отсекать
-  salary_target: 6000           # желаемый, €/мес гросс: выше — вакансия выше в списке
+  salary_currency: EUR          # валюта сумм ниже: EUR · RUB · USD · GBP… (курсы — currency_rates в config.yaml)
+  salary_min: visa              # visa — порог визы страны · число — свой минимум в месяц · 0 — не отсекать
+  salary_target: 6000           # желаемая в месяц: выше — вакансия выше в списке
   contract: penalize            # B2B, фриланс, почасовая ставка: skip — отсеять · penalize — ниже в списке (явную
                                 #   почасовую ставку и фриланс в офисе отсеивает) · ok
   outsourcing: penalize         # аутсорс и аутстафф (EPAM, Luxoft…): skip · penalize · ok

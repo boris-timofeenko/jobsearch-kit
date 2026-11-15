@@ -55,6 +55,10 @@ class DB:
         if "fingerprint" not in cols:
             self.c.execute("ALTER TABLE jobs ADD COLUMN fingerprint TEXT DEFAULT ''")
             self.c.execute("CREATE INDEX IF NOT EXISTS idx_jobs_fp ON jobs(fingerprint)")
+        # the office-region track was called "eu" before switches.offices let it be any region
+        if self.c.execute("SELECT 1 FROM jobs WHERE track='eu' LIMIT 1").fetchone():
+            self.c.execute("UPDATE jobs SET track='region' WHERE track='eu'")
+            self.c.commit()
 
     def known_ids(self):
         return {r[0] for r in self.c.execute("SELECT id FROM jobs")}

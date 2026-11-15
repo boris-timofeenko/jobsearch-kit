@@ -486,7 +486,8 @@ def _ascii(s):
 
 
 def country_of(location):
-    """Country from a free-form location; country names win over city names, the last comma part wins over the rest."""
+    """Country from a free-form location; country names win over city names, the last comma part wins over the rest.
+    The EU list first, then the country catalog (its regexes know Belgrade, Dubai and Russian spellings)."""
     loc = _ascii(location or "")
     parts = [p.strip() for p in loc.split(",")][::-1]
     for names_first in (True, False):
@@ -495,6 +496,11 @@ def country_of(location):
                 cand = names[:1] if names_first else names
                 if any(re.search(rf"\b{re.escape(n)}\b", part) for n in cand):
                     return country
+    from .config import catalog
+    for part in [p.strip() for p in (location or "").split(",")][::-1]:
+        for c in catalog().values():
+            if part and re.search(c["location_regex"], part, re.I):
+                return c["name"]
     return None
 
 
@@ -503,15 +509,15 @@ def relocation_lines(bank, track, location, country_name=None):
     rel = bank.get("relocation") or {}
     base = rel.get("default") or {}
     country = country_name
-    if track == "eu":
+    if track == "region":          # cv_bank `relocation.eu` is the same section under its old name
         country = country_of(location)
-        entry = {**(rel.get("eu") or {}), **((rel.get("countries") or {}).get(country) or {})}
+        entry = {**(rel.get("region") or rel.get("eu") or {}), **((rel.get("countries") or {}).get(country) or {})}
     else:
         entry = rel.get(track) or {}
     loc, auth = entry.get("location") or base.get("location"), entry.get("workauth") or base.get("workauth")
     to_country = f"to {country}" if country else "within the EU"
     fill = lambda s: s.replace("{to_country}", to_country).replace("{country}", country or "the EU") if s else s
-    note = {"remote": "remote", "remote_nl": "remote + NL"}.get(track) or country or ("ЕС" if track == "eu" else "общая")
+    note = {"remote": "remote", "remote_nl": "remote + NL"}.get(track) or country or ("регион" if track == "region" else "общая")
     return fill(loc), fill(auth), note
 
 

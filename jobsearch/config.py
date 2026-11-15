@@ -130,10 +130,10 @@ def track_codes(target):
 
 def default_location_penalty(target):
     """Final-fit correction per track (negative = bonus). Relocation goal: the primary country is a bonus, other
-    countries a small penalty, the rest of the EU more, remote most (no visa path). Remote-only goal: the reverse."""
-    out = {"eu": 2, "remote_nl": 2, "remote": 3, "other": 3}
+    countries a small penalty, the office regions more, remote most (no visa path). Remote-only goal: the reverse."""
+    out = {"region": 2, "remote_nl": 2, "remote": 3, "other": 3}
     if not target.get("primary"):
-        out.update({"remote": 0, "remote_nl": 0, "eu": 2})
+        out.update({"remote": 0, "remote_nl": 0, "region": 2})
     else:
         out[target["primary"]["code"]] = -1
     for c in target["countries"]:
@@ -157,7 +157,12 @@ SWITCH_VALUES = {
 }
 # What the code does without a switch: the behaviour the rules were calibrated with
 DEFAULT_PREFS = {"other_language": "skip", "contract": "penalize", "outsourcing": "penalize", "agencies": "penalize",
-                 "public_sector": "skip", "eu_offices": True, "remote": True, "salary_min": None}
+                 "public_sector": "skip", "remote": True, "salary_min": None, "currency": "EUR"}
+# switches.offices: offices outside the target countries that count as a move (the `region` track). A region name, a
+# catalog country code, or `world`. Each region is a list of parts of the world (filters.PART_WORDS + catalog `part`).
+REGIONS = {"eu": ("ЕС", ["eu"]), "europe": ("Европа", ["eu", "europe"]), "cis": ("СНГ и Кавказ", ["cis"]),
+           "middle_east": ("Ближний Восток и Африка", ["middle_east"]), "americas": ("Америка", ["americas"]),
+           "asia": ("Азия и Океания", ["asia"]), "world": ("весь мир", [])}
 PENALTY_KEYS = {"contract": ("contractor", -2), "outsourcing": ("consultancy", -1), "agencies": ("agency", -1)}
 AI_BONUS = {"prefer": {"ai_first": 2, "ai_product": 2, "ai_tooling": 1},
             "neutral": {"ai_first": 0, "ai_product": 0, "ai_tooling": 0},
@@ -179,10 +184,27 @@ def _choice(sw, name, problems):
     return v
 
 
-def apply_switches(profile):
+def offices_names(target):
+    """switches.offices in words: «ЕС», «СНГ и Кавказ, Сербия»."""
+    own = ([target["primary"]] if target.get("primary") else []) + list(target.get("countries") or [])
+    cat = {**catalog(), **{c["code"]: c for c in own}}
+    return ", ".join(REGIONS[o][0] if o in REGIONS else cat.get(o, {}).get("label", o).split(" ", 1)[-1]
+                     for o in target.get("offices") or [])
+
+
+def offices_list(v):
+    """switches.offices as a list of lowercase tokens; true/false is the old eu_offices (EU or nothing)."""
+    if isinstance(v, bool):
+        return ["eu"] if v else []
+    items = v if isinstance(v, list) else [v]
+    return [str(x).strip().lower() for x in items if str(x).strip().lower() not in ("", "none", "no", "off", "false")]
+
+
+def apply_switches(profile, rates=None):
     """Write the switches into candidate / target / prefs. A switch wins over the same field set elsewhere in the
     profile (the clash is listed in profile['_notes'] for `check`); fit_adjustments numbers set by hand still decide
-    how big a penalty is, the switch decides whether there is one."""
+    how big a penalty is, the switch decides whether there is one. Amounts (salary_min, salary_target) are in
+    switches.salary_currency and stored in euros (rates: config.yaml currency_rates)."""
     sw = dict(profile.get("switches") or {})
     cand = profile.setdefault("candidate", {}) or {}
     t = profile.setdefault("target", {}) or {}
@@ -200,15 +222,16 @@ def apply_switches(profile):
     countries = sw.get("countries")
     if countries is not None and not isinstance(countries, list):
         countries = [countries]
+    offices = sw["offices"] if sw.get("offices") is not None else sw.get("eu_offices")   # eu_offices: true/false, older
     if goal == "remote":
         if countries:
             notes.append("switches.goal: remote — список countries не используется")
-        if sw.get("eu_offices"):
-            notes.append("switches.goal: remote — eu_offices не используется, офисы не показываются")
+        if offices is not None and offices_list(offices):
+            notes.append("switches.goal: remote — offices не используется, офисы не показываются")
         put(t, "country", "none", "goal")
         t["countries"] = []
         put(t, "remote", True, "goal")
-        t["eu_offices"] = False                  # remote only: an office anywhere is not what is wanted
+        t["offices"] = []                        # remote only: an office anywhere is not what is wanted
     else:
         if countries:
             put(t, "country", countries[0], "countries")
@@ -217,8 +240,11 @@ def apply_switches(profile):
             put(t, "remote", False, "goal")
         elif goal == "both":
             put(t, "remote", True, "goal")
-        if "eu_offices" in sw:
-            put(t, "eu_offices", bool(sw["eu_offices"]), "eu_offices")
+        if offices is not None:
+            old = t.get("offices", offices_list(t["eu_offices"]) if "eu_offices" in t else None)
+            if old is not None and old != offices_list(offices):
+                notes.append(f"switches.offices перекрывает offices: {old!r} → {offices_list(offices)!r}")
+            t["offices"] = offices_list(offices)
     visa = _choice(sw, "visa", bad)
     if visa:
         put(cand, "needs_visa", visa == "needed", "visa")
@@ -249,30 +275,60 @@ def apply_switches(profile):
     if ai:
         for k, v in AI_BONUS[ai].items():       # a number written by hand in fit_adjustments wins, as for penalties
             adj.setdefault(k, v)
+    currency = str(sw.get("salary_currency") or "EUR").strip().upper()
+    rate = {"EUR": 1.0, **{str(k).upper(): float(v) for k, v in (rates or {}).items()}}.get(currency)
+    if not rate:
+        bad.append(f"switches.salary_currency: {currency} — нет курса в currency_rates (config.yaml), суммы читаются "
+                   f"как евро")
+        currency, rate = "EUR", 1.0
+    prefs["currency"] = currency
     if "salary_min" in sw:
         v = sw["salary_min"]
         if isinstance(v, str) and v.strip().lower() == "visa":
             prefs["salary_min"] = None if cand.get("needs_visa", True) else 0
         else:
             try:
-                prefs["salary_min"] = max(0, int(v or 0))
+                prefs["salary_min"] = max(0, int(v or 0)) * rate        # unrounded: shown back in the same currency
             except (TypeError, ValueError):
-                bad.append(f"switches.salary_min: {v!r}, нужно visa, число €/мес или 0")
+                bad.append(f"switches.salary_min: {v!r}, нужно visa, число в месяц ({currency}) или 0")
+            else:
+                if currency == "EUR" and prefs["salary_min"] > 30000:
+                    bad.append(f"switches.salary_min: {v} €/мес — похоже, это не евро: укажи валюту в "
+                               f"switches.salary_currency (RUB, USD…)")
     if sw.get("salary_target"):
-        put(t, "salary_target_month", int(sw["salary_target"]), "salary_target")
+        put(t, "salary_target_month", int(sw["salary_target"]) * rate, "salary_target")
     if sw.get("cv"):
         profile["_cv"] = str(sw["cv"])
-    prefs["eu_offices"] = bool(t.get("eu_offices", True))
     profile["prefs"] = prefs
     return profile
 
 
-def normalize_profile(profile):
-    """Switches first, then the target countries; afterwards the profile has the shape every module reads."""
-    apply_switches(profile)
+def money(eur, currency="EUR", rates=None):
+    """A monthly amount kept in euros, shown in the person's currency (switches.salary_currency)."""
+    rate = (rates or {}).get(currency)
+    if currency == "EUR" or not rate:
+        return f"€{eur:.0f}"
+    return f"{eur / rate:,.0f}".replace(",", " ") + " " + {"RUB": "₽", "USD": "$", "GBP": "£"}.get(currency, currency)
+
+
+def in_eu(country):
+    """A catalog country by its `part`; one described in the profile without it — by its name."""
+    from .filters import EU_LOC
+    return country.get("part") == "eu" if country.get("part") else bool(EU_LOC.search(country.get("name", "")))
+
+
+def normalize_profile(profile, rates=None):
+    """Switches first, then the target countries; afterwards the profile has the shape every module reads.
+    rates: EUR per unit of a currency (config.yaml currency_rates), for switches.salary_currency."""
+    apply_switches(profile, rates)
     explicit_floor = profile["target"].get("salary_floor_month")       # set by hand, before the catalog fills it
     profile["target"] = normalize_target(profile)
-    prefs = profile["prefs"]
+    t, prefs = profile["target"], profile["prefs"]
+    if "offices" not in t:      # an old long-form profile: eu_offices; otherwise the EU when the move is to the EU
+        t["offices"] = (offices_list(t["eu_offices"]) if "eu_offices" in t else
+                        ["eu"] if not t.get("primary") or in_eu(t["primary"]) else [])
+    prefs["offices"] = t["offices"]
+    prefs["rates"] = {str(k).upper(): float(v) for k, v in (rates or {}).items()}
     prefs["remote"] = bool(profile["target"].get("remote", True))
     if prefs["salary_min"] is None and not profile["candidate"].get("needs_visa", True):
         prefs["salary_min"] = int(explicit_floor or 0)    # visa thresholds mean nothing without a visa
@@ -294,9 +350,10 @@ def cv_source(cfg):
 
 # ------------------------------------------------------------------ sources derived from the profile
 def default_linkedin_locations(profile):
-    """Primary country with every query and up to 100 pages; each extra country and the remote EU search with the
-    first four queries and 50 pages (their result lists are long and repeat between queries); remote in the country
-    the candidate lives in (candidate.based_in) with the same four and 30 pages."""
+    """Primary country with every query and up to 100 pages; each extra country and the remote EU search (when Europe
+    is one of the candidate's remote zones) with the first four queries and 50 pages (their result lists are long and
+    repeat between queries); remote in the country the candidate lives in (candidate.based_in) with the same four
+    and 30 pages."""
     t, queries = profile["target"], (profile.get("role") or {}).get("queries") or []
     short = queries[:4]
     out = []
@@ -305,13 +362,17 @@ def default_linkedin_locations(profile):
     for c in t["countries"]:
         out.append({"name": c["name"], "remote": False, "max_pages": 50, "queries": short})
     if t.get("remote", True):
-        out.append({"name": "European Union", "remote": True, "max_pages": 50, "queries": short})
+        from .filters import EU_LOC, ZONE, parts_in, remote_zones
+        if "europe" in remote_zones(profile):
+            out.append({"name": "European Union", "remote": True, "max_pages": 50, "queries": short})
         # the EU-wide search stops at 1000 cards and loses remote jobs open to residents of one country; the one
         # where the candidate lives gets its own search (a test setup for Warsaw, 15.11: 46 live postings from it)
-        from .filters import EU_LOC
         home = str((profile.get("candidate") or {}).get("based_in") or "").strip()
-        # EU/EEA only: "Georgia" on LinkedIn is the US state, Serbia or Kazakhstan give local jobs, not remote ones
-        if home and EU_LOC.fullmatch(home) and home.lower() not in {l["name"].lower() for l in out}:
+        # in Europe, EU/EEA only: "Georgia" on LinkedIn is the US state, Serbia or Kazakhstan give local jobs, not
+        # remote ones; outside Europe (United States, India) the home country is the remote search
+        zones = {ZONE[p] for p in parts_in(home)}
+        if home and (EU_LOC.fullmatch(home) or (zones and "europe" not in zones)) \
+                and home.lower() not in {l["name"].lower() for l in out}:
             out.append({"name": home, "remote": True, "max_pages": 30, "queries": short})
     return out
 
@@ -326,11 +387,14 @@ def load(my=None):
     if profile is None:
         raise ConfigError(f"нет {my / 'profile.yaml'}: настрой профиль (скилл /jobsearch-setup в Claude Code "
                           f"или `python -m jobsearch init --role <роль>`, см. docs/SETUP.md)")
-    normalize_profile(profile)
+    normalize_profile(profile, cfg.get("currency_rates"))
     cfg["profile"] = profile
     role, t = profile.get("role") or {}, profile["target"]
-    if not profile["prefs"]["remote"] and "aggregators" not in over:     # relocation only: remote boards are noise
-        cfg["aggregators"] = [a for a in cfg.get("aggregators") or [] if a not in REMOTE_ONLY_AGGREGATORS]
+    if "aggregators" not in over:
+        if not profile["prefs"]["remote"]:          # relocation only: remote boards are noise
+            cfg["aggregators"] = [a for a in cfg.get("aggregators") or [] if a not in REMOTE_ONLY_AGGREGATORS]
+        own = [a for a in country_aggregators(profile) if a not in (cfg.get("aggregators") or [])]
+        cfg["aggregators"] = list(cfg.get("aggregators") or []) + own
     li = cfg.setdefault("linkedin", {})
     if not li.get("queries"):
         li["queries"] = list(role.get("queries") or [])
@@ -349,6 +413,16 @@ def load(my=None):
             cfg[k] = profile[k]
     cfg["companies"] = load_companies(cfg.get("company_files") or [])
     return cfg
+
+
+def country_aggregators(profile):
+    """Boards of the target countries and of the country the candidate lives in (catalog field `aggregators`):
+    Habr Career for Russia, Belarus, Kazakhstan."""
+    t, cat = profile["target"], catalog()
+    home = str((profile.get("candidate") or {}).get("based_in") or "").strip().lower()
+    countries = ([t["primary"]] if t.get("primary") else []) + list(t["countries"])
+    countries += [c for c in cat.values() if home and (c["name"].lower() == home or re.search(c["location_regex"], home, re.I))]
+    return list(dict.fromkeys(a for c in countries for a in c.get("aggregators") or []))
 
 
 def load_companies(files):
@@ -406,6 +480,11 @@ def problems(cfg):
                 out.append(f"{where}: регэксп {pat[:60]!r} не компилируется — {e}")
     if not t.get("primary") and not t["countries"] and not t.get("remote", True):
         out.append("target: нет ни страны, ни remote — искать негде")
+    known = set(catalog()) | set(track_codes(t))
+    for o in t.get("offices") or []:
+        if o not in REGIONS and o not in known:
+            out.append(f"switches.offices: {o!r} — нет ни такого региона ({', '.join(REGIONS)}), ни страны в "
+                       f"presets/countries.yaml")
     for f in cfg.get("company_files") or []:
         if not str(f).startswith("my/") and not path_in_project(f).exists():      # own lists are optional
             out.append(f"company_files: файла {f} нет")

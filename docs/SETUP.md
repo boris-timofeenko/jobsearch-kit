@@ -44,14 +44,15 @@ python3 -m venv .venv
 ```yaml
 switches:
   goal: both                    # relocate — только переезд · remote — только удалёнка · both
-  countries: [de, nl]           # страны переезда, первая — основная
-  eu_offices: true              # офис в другой стране ЕС тоже рассматриваю
-  visa: needed                  # not_needed — есть гражданство или ВНЖ ЕС
+  countries: [de, nl]           # страны переезда, первая — основная (коды из presets/countries.yaml)
+  offices: [eu]                 # офис в других странах региона: eu · europe · cis · middle_east · world · коды · none
+  visa: needed                  # not_needed — есть гражданство или ВНЖ в этих странах
   based_in: Georgia
   languages: [English, Russian]
   other_language: skip          # вакансия требует язык не из списка: skip · flag · any
   level: senior
-  salary_min: visa              # visa · свой минимум €/мес · 0
+  salary_currency: EUR          # валюта сумм ниже: EUR · RUB · USD…
+  salary_min: visa              # visa · свой минимум в месяц · 0
   salary_target: 6000
   contract: penalize            # skip · penalize · ok
   outsourcing: penalize
@@ -63,8 +64,20 @@ switches:
 
 Что меняет каждый — в [CONFIG.md](CONFIG.md#переключатели-switches). Главное:
 
-- `visa: not_needed` при гражданстве ЕС/ЕЭЗ: тогда «EU citizens only» и «no visa sponsorship» не мешают, а порог
-  визы не применяется.
+- Страны — не только ЕС: в каталоге есть Великобритания, Швейцария, Норвегия, Сербия, Черногория, Турция, Россия,
+  Беларусь, Казахстан, Узбекистан, Кыргызстан, Армения, Грузия, Азербайджан, ОАЭ, Израиль, США и Канада. Страны нет —
+  опиши её прямо в профиле: `countries: [{code: br, name: Brazil, location_regex: '\b(brazil|são paulo|sao paulo)',
+  part: americas}]`. `part` — часть света (eu, europe, cis, middle_east, americas, asia): по ней решается, какие
+  remote-вакансии тебе доступны.
+- `offices` — офис или гибрид в странах, которые не в `countries`, но куда тоже готов переехать: регион (`eu`,
+  `europe`, `cis` — СНГ и Кавказ, `middle_east`, `americas`, `asia`), коды стран (`[rs, ae]`), `world` или `none`.
+  Без этой строки — `eu`, если основная страна в ЕС, иначе `none`.
+- Remote подходит, если в его локации нет мест только из чужих частей света: живущему в Грузии подходят «Remote,
+  EMEA» и «Remote, Moscow», но не «Remote, US»; живущему в США — наоборот. Европа и СНГ считаются одной частью.
+- `visa: not_needed`, если у тебя гражданство или ВНЖ в целевых странах: тогда «no visa sponsorship» не мешает, а
+  порог визы не применяется. «EU citizens only» не мешает, только когда все целевые страны в ЕС.
+- `salary_currency`: в какой валюте `salary_min` и `salary_target`. Для России — `RUB`: тогда «от 250 000 ₽» в
+  вакансии сравнивается с твоим минимумом, а в карточках суммы в рублях. Курсы — `currency_rates` в `config.yaml`.
 - `other_language: flag` — если учишь местный язык: английские объявления с требованием этого языка придут с
   пометкой. Объявления целиком на незнакомом языке по-прежнему отсеиваются; чтобы видеть и их — `any` (в Нидерландах
   и Германии это вдвое больше вакансий и оценок модели).
@@ -158,7 +171,7 @@ Java-вакансия тебе подходит «с мелким пробело
 ```yaml
 company_files:
   - my/companies.yaml
-  - boards/curated.yaml          # ~220 софтверных компаний NL/ЕС/remote — подходит почти всем
+  - boards/curated.yaml          # ~220 софтверных компаний NL/ЕС/remote — подходит почти всем, кроме поиска в России и СНГ
   - boards/nl-ind-sponsors.yaml  # если ищешь в Нидерландах: 432 работодателя-спонсора
   - boards/de-large.yaml         # если в Германии: 72 крупных работодателя
 ```

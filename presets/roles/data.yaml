@@ -22,10 +22,12 @@ role:
   title_include:
     - '\b(data|analytics|bi|machine learning|ml|ai)\b[^,|]{0,20}\b(engineer|scientist|analyst|developer|architect)\b'
     - '\b(data scientist|data engineer|analytics engineer|mlops|data analyst)\b'
+    - '(аналитик данных|data[- ]?аналитик|дата[- ]?аналитик|инженер данных|data[- ]?инженер|дата[- ]?инженер|дата[- ]?сайентист|ml[- ]?инженер|инженер машинного обучения|bi[- ]?(аналитик|разработчик)|продуктовый аналитик)'      # по-русски: Хабр Карьера, Telegram-каналы
   title_exclude:
     - '\b(data entry|data annotat\w*|annotator|labell?er|data quality (inspector|technician)|qa|tester|sdet)\b'
     - '\b(financial analyst|business analyst|credit analyst|risk analyst|accountant|bookkeeper|sales|customer|recruiter|marketing manager|account)\b'
     - '\b(do not apply|test job|testjob)\b'
+    - '(бизнес[- ]аналитик|системн\w* аналитик|финансов\w* аналитик|тестировщик\w*|наставник\w*|ментор\w*|преподавател\w*|автор\w* курс\w*)'
   title_boost:
     '\b(data engineer|data scientist|machine learning|ml engineer|analytics engineer)\b': 8
 

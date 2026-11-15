@@ -187,10 +187,10 @@ def test_country_and_relocation():
     assert c.country_of("Werken op afstand") is None
     assert c.relocation_lines(BANK, "nl", "Amsterdam", "Netherlands")[:2] == \
         ("Ready to relocate to the Netherlands.", "Eligible for HSM.")
-    loc, auth, _ = c.relocation_lines(BANK, "eu", "Madrid, Community of Madrid, Spain")
+    loc, auth, _ = c.relocation_lines(BANK, "region", "Madrid, Community of Madrid, Spain")
     assert loc == "Ready to relocate to Spain." and auth == "Eligible for the EU Blue Card."
-    assert c.relocation_lines(BANK, "eu", "Dublin, County Dublin, Ireland")[1].startswith("Eligible for the Critical")
-    assert c.relocation_lines(BANK, "eu", "Europe")[0] == "Ready to relocate within the EU."
+    assert c.relocation_lines(BANK, "region", "Dublin, County Dublin, Ireland")[1].startswith("Eligible for the Critical")
+    assert c.relocation_lines(BANK, "region", "Europe")[0] == "Ready to relocate within the EU."
     assert c.relocation_lines(BANK, "other", "New York")[:2] == ("Located in Belgrade.", "Non-EU national.")
 
 

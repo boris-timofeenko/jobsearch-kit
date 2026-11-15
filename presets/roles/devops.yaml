@@ -21,11 +21,13 @@ role:
   title_include:
     - '\b(devops|dev ops|sre|site reliability|platform|cloud|infrastructure|kubernetes|k8s|devsecops)\b[^,|]{0,20}\b(engineer|developer|architect|specialist)\b'
     - '\b(devops|sre|site reliability engineer)\b'
+    - '(devops|sre)[- ]?(инженер|специалист)|инженер[^,|]{0,20}(devops|sre|инфраструктур\w*|надёжност\w*|надежност\w*|kubernetes|облачн\w*)|(облачн\w*|платформенн\w*) инженер'      # по-русски: Хабр Карьера, Telegram-каналы
   title_exclude:
     - '\b(qa|tester|test automation|sdet|frontend|front[- ]end|ios|android|data (engineer|scientist|analyst)|machine learning)\b'
     - '\b(helpdesk|help desk|service desk|desktop support|it support|network technician|telecom|sap basis|citrix)\b'
     - '\b(sales|customer|solutions? (engineer|architect)|presales|recruiter|designer|marketing|product manager|account)\b'
     - '\b(do not apply|test job|testjob)\b'
+    - '(техподдержк\w*|тестировщик\w*|наставник\w*|ментор\w*|преподавател\w*|автор\w* курс\w*)'
   title_boost:
     '\b(devops|sre|site reliability|platform)\b': 8
 

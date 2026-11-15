@@ -34,7 +34,7 @@ RULES_TEMPLATE = """Оцени вакансию строго по тексту. 
 - residency_restriction: процитируй, если вакансия закрыта для того, кто переезжает: гражданство, уже имеющееся право
   на работу или разрешение, отказ в спонсорстве или релокации, проживание с «only», «currently», «already», «local
   candidates» ("EU citizens only", "no visa sponsorship", "right to work in the UK", "Poland-based candidates only").
-  Для вакансии в целевой стране и для офисной или гибридной вакансии в ЕС простое «based in <страна или город
+  Для вакансии в целевой стране{offices_where} простое «based in <страна или город
   вакансии>» или «remote within <эта страна>» — не ограничение: кандидат переезжает туда; упомяни это в note. Для
   remote-вакансии, открытой только жителям одной страны, — ограничение. Общие фразы про "eligible to work" без
   страны — null.
@@ -69,7 +69,7 @@ RULES_TEMPLATE = """Оцени вакансию строго по тексту. 
   record — тоже employee); contractor — B2B, фриланс, independent contractor, «contract role» на срок через агентство
   или аутстафф; unknown — не сказано. Выбирай contractor только по прямым словам текста.
 - verdict: apply (стоит откликаться), maybe, skip. skip ТОЛЬКО по причинам: не та роль, {skip_reasons}обязательный
-  язык, уровень сильно ниже кандидата, локация вне ЕС без remote.
+  язык, уровень сильно ниже кандидата, офис вне {places} без remote.
 - note: одна-две фразы по-русски: суть роли и главный риск/что проверить. Без общих слов. Страну упоминай, только если
   с ней связан риск для визы или remote.{note_scheme}"""
 RULES = ""
@@ -81,7 +81,7 @@ SYSTEM = PROFILE + "\n\n" + TAIL
 
 
 KNOWN_LANGS = {"english", "russian"}
-LOCATION_PENALTY = {"nl": -1, "eu": 2, "remote_nl": 2, "remote": 3, "other": 3}
+LOCATION_PENALTY = {"nl": -1, "region": 2, "remote_nl": 2, "remote": 3, "other": 3}
 # AI bonuses are 0 unless the profile sets them (target.fit_adjustments): how much AI in the role matters is personal
 FIT_ADJ_DEFAULT = {"sponsorship_yes": 2, "relocation_yes": 1, "ai_first": 0, "ai_product": 0, "ai_tooling": 0,
                    "agency": -1, "consultancy": -1, "contractor": -2, "low_competition": 1, "low_competition_max": 25,
@@ -140,14 +140,21 @@ def language_gap(requirement):
     return ", ".join(sorted(missing))
 
 
-def _goal(c, t):
+def _money(eur, prefs):
+    from .config import money
+    return money(eur, prefs.get("currency", "EUR"), prefs.get("rates") or {})
+
+
+def _goal(c, t, prefs=None, eu_citizen=False):
     """Candidate's goals for the rubric: context for sponsorship, residency and note, never for fit."""
     primary, extra = t.get("primary"), t.get("countries") or []
+    prefs = prefs or {}
     needs_visa = c.get("needs_visa", True)
     lines = ["Цели кандидата — контекст для sponsorship, residency_restriction и note; на fit они не влияют."]
     floor = t.get("salary_floor_month")
-    money = (f", зарплата не ниже €{floor}/мес гросс" if floor else "") + \
-            (f" (цель €{t['salary_target_month']}+)" if t.get("salary_target_month") else "")
+    gross = " гросс" if prefs.get("currency", "EUR") == "EUR" else ""      # roubles are usually quoted net
+    money = (f", зарплата не ниже {_money(floor, prefs)}/мес{gross}" if floor else "") + \
+            (f" (цель {_money(t['salary_target_month'], prefs)}+)" if t.get("salary_target_month") else "")
     if primary:
         how = (f" по схеме {primary['visa_scheme']}" if needs_visa and primary.get("visa_scheme") else "")
         sponsor = (", работодатель должен быть признанным спонсором"
@@ -155,15 +162,22 @@ def _goal(c, t):
         lines.append(f"Основная цель: работа в {primary['name']}{how}{sponsor}{money}.")
     if extra:
         lines.append("Дополнительные страны (отдельные треки, тоже переезд): " + ", ".join(
-            f"{x['name']}" + (f" ({x.get('visa_scheme', '')}, порог ~€{x.get('salary_floor_month', '?')}/мес)"
-                               if needs_visa else "") for x in extra) + ".")
+            f"{x['name']}" + (f" ({x.get('visa_scheme', '')}" + (f", порог ~€{x['salary_floor_month']}/мес"
+                                                                  if x.get("salary_floor_month") else "") + ")"
+                               if needs_visa and x.get("visa_scheme") else "") for x in extra) + ".")
+    if t.get("offices"):
+        from .config import offices_names
+        lines.append(f"Офис или гибрид в других странах региона ({offices_names(t)}) — тоже переезд, ниже в списке.")
     base = t.get("remote_base") or c.get("based_in") or "текущая страна проживания"
     if t.get("remote", True):
         lines.append(f"{'Запасной трек' if primary or extra else 'Основная цель'}: remote, база — {base}."
                      + ("" if primary or extra else money))
-    if not needs_visa:
+    if not needs_visa and eu_citizen:
         lines.append("Виза в ЕС кандидату не нужна (гражданство ЕС/ЕЭЗ): sponsorship и relocation — только информация, "
                      "требование гражданства ЕС или права на работу в ЕС — не ограничение.")
+    elif not needs_visa:
+        lines.append("Рабочая виза в целевых странах кандидату не нужна (гражданство или ВНЖ): sponsorship и relocation "
+                     "— только информация, требование гражданства или права на работу в этих странах — не ограничение.")
     if GOAL_NOTE:
         lines.append(GOAL_NOTE)
     return " ".join(lines[:1]) + "\n" + " ".join(lines[1:])
@@ -173,10 +187,11 @@ def configure(profile):
     """Build the candidate profile and the rubric from the normalized profile (config.load)."""
     global PROFILE, RULES, SYSTEM, KNOWN_LANGS, LOCATION_PENALTY, FIT_ADJ, GOAL_NOTE, GOAL, FOCUS_FIT, NEEDS_VISA
     global SPONSOR_REGISTER
-    from .config import default_location_penalty
+    from .config import default_location_penalty, offices_names
     c, r, t = profile.get("candidate", {}), profile.get("role", {}), profile.get("target", {})
-    if "primary" in t:
-        LOCATION_PENALTY = {**default_location_penalty(t), **{k: int(v) for k, v in (t.get("location_penalty") or {}).items()}}
+    if "primary" in t:      # "eu" is the region track's name before offices existed
+        LOCATION_PENALTY = {**default_location_penalty(t), **{("region" if k == "eu" else k): int(v)
+                                                               for k, v in (t.get("location_penalty") or {}).items()}}
     adj = {LEGACY_FIT_KEYS.get(k, k): int(v) for k, v in (t.get("fit_adjustments") or {}).items()}
     FIT_ADJ = {**FIT_ADJ_DEFAULT, **adj}               # from the defaults: nothing leaks from a previous profile
     GOAL_NOTE = (t.get("goal_note") or "").strip()
@@ -192,7 +207,10 @@ def configure(profile):
     PROFILE = (f"Кандидат: {c['summary'].strip()}\nЯзыки: {', '.join(c.get('languages', []))}; других языков нет. "
                f"{c.get('citizenship_note', '')}{based}").strip()
     primary = t.get("primary")
-    city = (primary or {}).get("city") or (primary or {}).get("name") or "удобном для кандидата месте ЕС"
+    region = offices_names(t)
+    city = (primary or {}).get("city") or (primary or {}).get("name") or \
+        (f"удобном для кандидата месте ({region})" if region else "стране, где живёт кандидат")
+    places = " и ".join(x for x in ("целевых стран" if countries else "", region) if x) or "страны кандидата"
     strengths = (r.get("strengths") or "").strip()
     RULES = RULES_TEMPLATE.format(
         city=city,
@@ -209,8 +227,11 @@ def configure(profile):
                       "вакансии, " if NEEDS_VISA else "требование жить в другой стране для remote, "),
         note_scheme=(f" Визовую схему {primary['visa_scheme']} упоминай только для вакансий в {primary['name']}."
                      if primary and NEEDS_VISA and primary.get("visa_scheme") else ""),
+        offices_where=(f" и для офисной или гибридной вакансии в регионе {region}" if region else ""),
+        places=places,
     )
-    GOAL = _goal(c, t)
+    from .filters import eu_citizen
+    GOAL = _goal(c, t, profile.get("prefs"), eu_citizen(profile))
     SYSTEM = PROFILE + "\n\n" + RULES + "\n\n" + GOAL + "\n\n" + TAIL
 
 
@@ -296,7 +317,7 @@ def _country_codes():
 
 def select_candidates(jobs, cfg):
     """Which jobs deserve an LLM call. Cheap cuts first: only live (or off-domain-rescuable) postings with real text;
-    remote and eu tracks only above a score floor (min_score_remote); target countries first."""
+    remote and region tracks only above a score floor (min_score_remote); target countries first."""
     floor = cfg.get("min_score_remote", 50)
     out = []
     for j in jobs:
@@ -304,12 +325,12 @@ def select_candidates(jobs, cfg):
             continue
         if j.verdict == "skip" and not rescuable(j):
             continue
-        if j.verdict == "other" or (j.track not in ("remote_nl", "remote", "eu") and j.track not in _country_codes()):
+        if j.verdict == "other" or (j.track not in ("remote_nl", "remote", "region") and j.track not in _country_codes()):
             continue
-        if j.track in ("remote", "eu") and j.score < floor:
+        if j.track in ("remote", "region") and j.score < floor:
             continue
         out.append(j)
-    out.sort(key=lambda j: (0 if j.track in _country_codes() else {"eu": 1, "remote_nl": 2}.get(j.track, 3), -j.score))
+    out.sort(key=lambda j: (0 if j.track in _country_codes() else {"region": 1, "remote_nl": 2}.get(j.track, 3), -j.score))
     return out[:cfg.get("max_per_run", 300)]
 
 
@@ -521,7 +542,7 @@ def apply_assessment(job, a: Assessment):
     if job.verdict == "skip" and rescuable(job) and a.is_target_role:
         job.reasons = [r for r in job.reasons if r != _f.OFF_DOMAIN_REASON] + [
             f"LLM: роль подходит, эвристика «{_f.OFF_DOMAIN_REASON}» снята"]
-        job.verdict = "live" if (job.track in ("remote", "remote_nl", "eu") or job.track in _country_codes()) else "other"
+        job.verdict = "live" if (job.track in ("remote", "remote_nl", "region") or job.track in _country_codes()) else "other"
         job.score = max(job.score, 50)
     job.llm_fit = a.fit
     job.llm_note = a.note[:400]
@@ -529,8 +550,8 @@ def apply_assessment(job, a: Assessment):
     skip = []
     if not a.is_target_role:
         skip.append("LLM: не та роль")
-    track_after = ("eu" if job.track in ("remote", "remote_nl") and a.work_mode in ("hybrid", "onsite")
-                   and _f.EU_LOC.search(job.location or "") else job.track)          # the switch below, computed early
+    track_after = ("region" if job.track in ("remote", "remote_nl") and a.work_mode in ("hybrid", "onsite")
+                   and _f.OFFICES.search(job.location or "") else job.track)         # the switch below, computed early
     soft_residency = []
     if a.residency_restriction and not _f.residency_blocks(a.residency_restriction, track_after, job.location):
         soft_residency = [f"LLM: просят жить в стране вакансии — «{a.residency_restriction[:90]}»: при переезде не помеха"]
@@ -555,8 +576,8 @@ def apply_assessment(job, a: Assessment):
         skip.append(f"LLM: оплата {pay}")
     elif a.pay_basis in ("hourly", "daily"):
         flags.append(f"LLM: ставка {pay}")
-    if NEEDS_VISA and a.sponsorship == "no" and (job.track in _f.COUNTRY_CODES or job.track == "eu"):
-        skip.append("LLM: спонсорство явно не предлагается")   # on-site in the EU without a visa is not reachable
+    if NEEDS_VISA and a.sponsorship == "no" and _f.relocation_track(job.track):
+        skip.append("LLM: спонсорство явно не предлагается")   # an office abroad without a visa is not reachable
     if a.verdict == "skip" and not skip:
         flags_extra = [f"LLM: слабое соответствие (fit {a.fit}) — {a.note[:100]}"]   # ranking, not exclusion
     else:
@@ -570,12 +591,12 @@ def apply_assessment(job, a: Assessment):
     elif moving:
         flags.append("LLM: помощь с переездом ✅")
     if job.track in ("remote", "remote_nl") and a.work_mode in ("hybrid", "onsite"):
-        if _f.EU_LOC.search(job.location or ""):
-            job.track = "eu"                  # not remote after all, but relocation within the EU is fine
-            flags.append(f"LLM: {a.work_mode}, трек EU")
+        if _f.OFFICES.search(job.location or ""):
+            job.track = "region"              # not remote after all, but a move within the office regions is fine
+            flags.append(f"LLM: {a.work_mode}, офис в регионе")
         else:
             job.track = "other"
-            flags.append(f"LLM: {a.work_mode} вне ЕС — не remote")
+            flags.append(f"LLM: {a.work_mode} вне целевых стран и регионов — не remote")
     if a.salary_month_eur and not job.salary_month:
         job.salary_month = a.salary_month_eur
     # final fit = model fit (role match only) + what the model must not price in: location, visa or relocation offer,

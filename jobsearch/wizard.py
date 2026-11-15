@@ -9,16 +9,18 @@ from . import config
 QUESTIONS = [
     ("goal", "Что ищешь? relocate — переезд, remote — удалёнка, both — и то и другое", "choice"),
     ("countries", "Страны переезда через запятую, первая — основная ({codes})", "countries"),
-    ("eu_offices", "Офис в другой стране ЕС тоже рассматриваешь? y/n", "bool"),
-    ("visa", "Нужна рабочая виза в ЕС? needed — да, not_needed — есть гражданство или ВНЖ ЕС", "choice"),
+    ("offices", "Офис в других странах, куда тоже готов переехать: eu, europe, cis (СНГ и Кавказ), middle_east, "
+                "americas, asia, world, коды стран через запятую или none", "offices"),
+    ("visa", "Нужна рабочая виза в этих странах? needed — да, not_needed — есть гражданство или ВНЖ", "choice"),
     ("based_in", "Где живёшь сейчас (страна по-английски)", "text"),
     ("languages", "На каких языках можешь работать, через запятую (по-английски)", "list"),
     ("other_language", "Вакансия требует язык не из списка: skip — отсеять, flag — показать с пометкой, any — не смотреть",
      "choice"),
     ("level", "Твой уровень: junior, mid, senior, lead", "choice"),
-    ("salary_min", "Минимум зарплаты: visa — порог визы страны, число — свой минимум €/мес гросс, 0 — не отсекать",
+    ("salary_currency", "Валюта сумм зарплаты: EUR, RUB, USD, GBP…", "currency"),
+    ("salary_min", "Минимум зарплаты: visa — порог визы страны, число — свой минимум в месяц, 0 — не отсекать",
      "salary"),
-    ("salary_target", "Желаемая зарплата, €/мес гросс", "int"),
+    ("salary_target", "Желаемая зарплата в месяц", "int"),
     ("contract", "B2B, фриланс, почасовая ставка: skip — отсеять, penalize — ниже в списке, ok", "choice"),
     ("outsourcing", "Аутсорс и аутстафф: skip, penalize, ok", "choice"),
     ("agencies", "Рекрутеры без названия работодателя: skip, penalize, ok", "choice"),
@@ -74,6 +76,14 @@ def parse(kind, raw, key, cat):
         codes = [x.strip().lower() for x in re.split(r"[,\s]+", raw.strip("[]")) if x.strip()]
         bad = [c for c in codes if c not in cat]
         return (codes, "") if codes and not bad else (None, f"неизвестно: {', '.join(bad) or 'пусто'}")
+    if kind == "offices":
+        items = [x.strip().lower() for x in re.split(r"[,\s]+", raw.strip("[]")) if x.strip()]
+        items = [] if items in ([], ["none"]) else items
+        bad = [x for x in items if x not in config.REGIONS and x not in cat]
+        return (items, "") if not bad else (None, f"неизвестно: {', '.join(bad)}")
+    if kind == "currency":
+        v = raw.upper()
+        return (v, "") if re.fullmatch(r"[A-Z]{3}", v) else (None, "трёхбуквенный код: EUR, RUB, USD")
     if kind == "list":
         items = [x.strip() for x in raw.strip("[]").split(",") if x.strip()]
         return (items, "") if items else (None, "хотя бы один")
@@ -100,7 +110,7 @@ def run(text, my, ask=None, say=print):
     for key, question, kind in QUESTIONS:
         if key == "countries" and goal == "remote":
             continue
-        if key == "eu_offices" and goal == "remote":
+        if key == "offices" and goal == "remote":
             continue
         default = current(text, key)
         while True:

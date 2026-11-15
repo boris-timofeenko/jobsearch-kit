@@ -1,5 +1,6 @@
 import collections
 import json
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
@@ -8,7 +9,7 @@ from jobsearch import cli, filters
 from jobsearch.cli import load_cfg
 from jobsearch.http import Http
 from jobsearch.models import Job
-from jobsearch.sources import aggregators, ats
+from jobsearch.sources import aggregators, ats, habr
 
 TEAMTAILOR_RSS = b"""<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:tt="https://teamtailor.com/locations"><channel><title>Fortaegis Technologies</title>
@@ -658,3 +659,35 @@ def test_board_that_fails_does_not_stop_the_others(monkeypatch):
     monkeypatch.setitem(ats.FETCHERS, "greenhouse", board)
     companies = [{"name": n, "ats": "greenhouse", "slug": n.lower()} for n in ("Adyen", "Down", "Mollie")]
     assert [j.company for j in cli.collect_boards(companies, workers=3)] == ["Adyen", "Mollie"]
+
+
+# ------------------------------------------------------------------ Habr Career
+def habr_vacancy(vid, days_ago, cities=("Белград",)):
+    """One item of career.habr.com/api/frontend/vacancies, the fields the source reads."""
+    date = (datetime.now(timezone.utc) - timedelta(days=days_ago)).isoformat()
+    return {"id": vid, "href": f"/vacancies/{vid}", "title": "Senior QA Engineer", "remoteWork": True,
+            "publishedDate": {"date": date}, "company": {"title": "Acme"}, "employment": "full_time",
+            "locations": [{"title": c} for c in cities], "salary": {"formatted": "от 230 000 до 250 000 ₽"}}
+
+
+def habr_page(*items):
+    return {"list": list(items), "meta": {"totalPages": 50}}
+
+
+def test_habr_feed_is_read_by_date_down_to_the_window():
+    http = Board(habr_page(habr_vacancy(1, 0), habr_vacancy(2, 1)), habr_page(habr_vacancy(3, 2), habr_vacancy(4, 9)),
+                 habr_page(habr_vacancy(5, 10)))
+
+    jobs = habr.habr(http, days=7)
+
+    assert [j.id for j in jobs] == ["habr:1", "habr:2", "habr:3"]
+    assert (jobs[0].url, jobs[0].remote, jobs[0].salary_text) == (
+        "https://career.habr.com/vacancies/1", True, "от 230 000 до 250 000 ₽")
+    assert len(http.urls) == 3            # the page with nothing new ends the reading
+    assert aggregators.AGGREGATORS["habr"] is habr.habr and ats.DETAIL_FETCHERS["habr"] is ats.detail_page
+
+
+def test_habr_city_without_a_country_is_russian():
+    location = lambda *cities: habr.location({"locations": [{"title": c} for c in cities]})
+    assert (location("Белград"), location("Шахты", "Новошахтинск"), location()) == (
+        "Белград", "Шахты, Новошахтинск, Россия", "Россия")

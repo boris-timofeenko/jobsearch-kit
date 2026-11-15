@@ -22,10 +22,12 @@ role:
     - '\b(mobile|ios|android|flutter|react native|swift|kotlin|app)\b[^,|]{0,20}\b(engineer|developer|dev)\b'
     - '\b(ios|android|flutter|react native)\b'
     - '\b(app|ios|android|mobile)[- ]?entwickler'      # немецкие заголовки
+    - '(ios|android|flutter|react native|swift|kotlin|мобильн\w*)[- ]?(разработчик|программист)|(разработчик|программист)\w*[^,|]{0,20}\b(ios|android|flutter|react native|мобильн\w*)'      # по-русски: Хабр Карьера, Telegram-каналы
   title_exclude:
     - '\b(qa|tester|test automation|sdet|engineer in test|game|unity|unreal|embedded|firmware|hardware|automotive)\b'
     - '\b(sales|support|customer|solutions? (engineer|architect)|presales|recruiter|designer|marketing|product manager|account)\b'
     - '\b(do not apply|test job|testjob)\b'
+    - '(тестировщик\w*|наставник\w*|ментор\w*|преподавател\w*|автор\w* курс\w*|тестировани\w*|аналитик\w*)'
   title_boost:
     '\b(ios|android|flutter|mobile)\b': 8
 

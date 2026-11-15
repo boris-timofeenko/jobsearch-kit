@@ -201,3 +201,8 @@ def test_low_yield_job_is_skipped_with_a_reason():
 def test_quiet_hours_cover_the_night_only():
     assert notify.quiet("00:00-08:00", datetime(2026, 10, 28, 0, 30))
     assert not notify.quiet("00:00-08:00", datetime(2026, 10, 28, 8, 15))
+
+
+def test_old_eu_track_is_renamed_when_the_database_opens(tmp_path):
+    DB(tmp_path / "jobs.db").c.execute("INSERT INTO jobs (id, track) VALUES ('linkedin:1', 'eu')").connection.commit()
+    assert DB(tmp_path / "jobs.db").get("linkedin:1")["track"] == "region"

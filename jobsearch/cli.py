@@ -559,7 +559,7 @@ def safe_analyze(j, sponsors, cfg):
 def print_jobs(jobs):
     for j in jobs:
         sp = f"IND: {j.sponsor_name}" if j.sponsor_name else ("remote" if j.remote else "")
-        sal = f" · €{j.salary_month:.0f}/мес" if j.salary_month else ""
+        sal = f" · {filters.money(j.salary_month)}/мес" if j.salary_month else ""
         llmtxt = f" · LLM {j.llm_fit}" if j.llm_fit is not None else ""
         print(f"{j.score:3d}{llmtxt} | {j.title} — {j.company} | {j.location}{sal} | {sp}")
         if j.reasons or j.llm_note:
@@ -867,7 +867,7 @@ def cmd_list(a):
             cur = r["track"]
             print(f"\n=== {report.TRACK_RU.get(cur, 'Прочее')} ===")
         sp = f"IND: {r['sponsor_name']}" if r["sponsor_name"] else ("remote" if r["remote"] else "")
-        sal = f" · €{r['salary_month']:.0f}" if r["salary_month"] else ""
+        sal = f" · {filters.money(r['salary_month'])}" if r["salary_month"] else ""
         print(f"{r['score']:3d} [{r['status']:7s}] {r['title']} — {r['company']} | {r['location']}{sal} | {sp} | {r['posted'] or r['first_seen'][:10]}")
         if r["reasons"]:
             print(f"      {r['reasons']}")
@@ -1016,10 +1016,13 @@ def cmd_check(a):
     floor = (lambda c: f", порог €{c.get('salary_floor_month') or '—'}") if visa_floors else (lambda c: "")
     tracks = ([f"{t['primary']['name']} (основная{floor(t['primary'])})"] if t.get("primary") else []) + [
         f"{c['name']}" + (f" (€{c.get('salary_floor_month') or '—'})" if visa_floors else "") for c in t["countries"]]
-    print("страны: " + (", ".join(tracks) or "нет (только remote)") + (" · remote EU" if t.get("remote", True) else "")
-          + ("" if p["prefs"]["eu_offices"] else " · офисы в других странах ЕС не показываются"))
+    zones = {"europe": "Европа и СНГ", "middle_east": "Ближний Восток и Африка", "americas": "Америка", "asia": "Азия"}
+    print("страны: " + (", ".join(tracks) or "нет (только remote)")
+          + (" · офисы: " + config.offices_names(t) if t.get("offices") else " · офисы вне этих стран не показываются")
+          + (" · remote: " + ", ".join(zones[z] for z in sorted(filters.REMOTE_ZONES)) if t.get("remote", True) else ""))
     pr = p["prefs"]
-    salary = ("порог визы страны" if pr["salary_min"] is None else f"свой минимум €{pr['salary_min']}" if pr["salary_min"]
+    salary = ("порог визы страны" if pr["salary_min"] is None else
+              f"свой минимум {config.money(pr['salary_min'], pr['currency'], pr['rates'])}" if pr["salary_min"]
               else "не отсекается")
     word = {"skip": "отсеивать", "flag": "только пометка", "any": "не смотреть", "penalize": "ниже в списке",
             "ok": "как остальные"}

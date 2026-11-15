@@ -18,9 +18,6 @@ NOT_RELEVANT_TITLE = re.compile(
     r"technician|seal testing|test bench|testsysteme|canoe|security testing|dast)\b", I)
 GERMAN_TITLE = re.compile(r"\b(testautomatisierer\w*|testingenieur|softwareentwickler|testmanager\w*|"
                           r"mit karriere\w*|für|und|qualitätssicherung|prüf\w*)\b", I)
-NON_EU_REMOTE = re.compile(r"\b(us|usa|u\.s\.|united states|us-remote|north america|americas|canada|india|"
-                           r"latam|apac|australia|singapore|philippines|brazil|mexico|argentina|colombia|"
-                           r"pakistan|vietnam|indonesia|africa|south africa|nigeria|egypt|uae|dubai|israel)\b", I)
 EU_LOC = re.compile(
     r"\b(austria|österreich|belgium|bulgaria|croatia|cyprus|czechia|czech republic|denmark|estonia|finland|france|germany|"
     r"greece|hungary|ireland|italy|italia|latvia|lithuania|luxembourg|malta|netherlands|poland|polska|portugal|romania|"
@@ -29,13 +26,109 @@ EU_LOC = re.compile(
     r"lisbon|lisboa|porto|milan|milano|rome|roma|turin|torino|vienna|wien|prague|praha|brno|budapest|bucharest|bucure[sș]ti|"
     r"cluj|ia[sș]i|timi[sș]oara|sofia|plovdiv|athens|thessaloniki|dublin|cork|galway|stockholm|gothenburg|malm[oö]|"
     r"copenhagen|k[oø]benhavn|aarhus|helsinki|oslo|zurich|z[uü]rich|geneva|basel|tallinn|riga|vilnius|ljubljana|zagreb|"
-    r"bratislava|nicosia|limassol|valletta|european union|europe|eu)\b", I)
-EU_HINT = re.compile(r"\b(europe|european|eu|emea|netherlands|nl|amsterdam|germany|berlin|spain|portugal|lisbon|"
-                     r"poland|cyprus|serbia|belgrade|remote - eu|cet|eet)\b", I)
+    r"bratislava|nicosia|limassol|valletta|european union|europe|eu|"
+    # the same in Russian: Habr Career and Russian-language Telegram channels write cities as «Белград», «Лиссабон»
+    r"австрия|вена|бельгия|брюссель|болгария|софия|хорватия|загреб|кипр|никосия|лимассол|ларнака|пафос|чехия|прага|брно|"
+    r"дания|копенгаген|эстония|таллин|финляндия|хельсинки|франция|париж|германия|берлин|мюнхен|гамбург|франкфурт|"
+    r"греция|афины|салоники|венгрия|будапешт|ирландия|дублин|италия|милан|рим|латвия|рига|литва|вильнюс|люксембург|"
+    r"мальта|нидерланды|голландия|амстердам|роттердам|польша|варшава|краков|вроцлав|гданьск|португалия|лиссабон|порту|"
+    r"румыния|бухарест|словакия|братислава|словения|любляна|испания|мадрид|барселона|валенсия|швеция|стокгольм|"
+    r"норвегия|осло|швейцария|цюрих|женева|исландия|евросоюз|европ\w*)\b", I)
 
-SENIOR = re.compile(r"\b(senior|sr\.?|lead|staff|principal|head of|architect|manager|tech lead|team lead)\b", I)
+# Parts of the world answer two questions. Is a remote posting open to where the candidate is: "Remote, US" for someone
+# in Georgia is not, "Remote, EMEA" is (Europe and the CIS count as one zone, ZONE). Which offices outside the target
+# countries count as a move (switches.offices: eu, europe, cis…). The catalog's countries join their part by the `part`
+# field (presets/countries.yaml); these words cover the rest of each part.
+PART_WORDS = {
+    "eu": EU_LOC.pattern,
+    "europe": r"\b(emea|cet|cest|eet|ukraine|kyiv|kiev|lviv|kharkiv|odesa|odessa|dnipro|moldova|chi[sș]in[aă]u|bosnia|"
+              r"sarajevo|north macedonia|macedonia|skopje|albania|tirana|kosovo|pristina|украина|киев|львов|харьков|"
+              r"одесса|днепр|молдова|молдавия|кишин[её]в|босния|сараево|македония|скопье|албания|тирана)\b",
+    "cis": r"\b(cis|tajikistan|dushanbe|turkmenistan|ashgabat|снг|таджикистан|душанбе|туркменистан|ашхабад)\b",
+    "middle_east": r"\b(qatar|doha|saudi arabia|saudi|riyadh|jeddah|bahrain|manama|oman|muscat|kuwait|egypt|cairo|jordan|"
+                   r"amman|lebanon|beirut|mena|gcc|middle east|africa|south africa|cape town|johannesburg|nigeria|lagos|"
+                   r"kenya|nairobi|morocco|casablanca|tunisia|катар|доха|саудовская аравия|эр-рияд|бахрейн|оман|кувейт|"
+                   r"египет|каир|иордания|ливан|ближний восток|африка|марокко)\b",
+    "americas": r"\b(north america|americas|latam|latin america|south america|us-remote|brazil|s[aã]o paulo|mexico|"
+                r"argentina|buenos aires|colombia|bogot[aá]|chile|peru|uruguay|montevideo|costa rica|америка|"
+                r"латинская америка|бразилия|мексика|аргентина|колумбия|чили|перу|уругвай)\b",
+    "asia": r"\b(asia|apac|asia[- ]pacific|india|bengaluru|bangalore|hyderabad|pune|chennai|mumbai|delhi|noida|gurgaon|"
+            r"gurugram|singapore|philippines|manila|vietnam|ho chi minh|hanoi|indonesia|jakarta|bali|thailand|bangkok|"
+            r"phuket|malaysia|kuala lumpur|china|shanghai|beijing|shenzhen|hong kong|taiwan|taipei|japan|tokyo|korea|"
+            r"seoul|australia|sydney|melbourne|new zealand|auckland|pakistan|karachi|lahore|bangladesh|dhaka|"
+            r"sri lanka|азия|индия|бангалор|сингапур|филиппины|вьетнам|индонезия|бали|таиланд|тайланд|бангкок|пхукет|"
+            r"малайзия|китай|шанхай|пекин|гонконг|тайвань|япония|токио|корея|сеул|австралия|сидней|мельбурн|"
+            r"новая зеландия|пакистан)\b",
+}
+ZONE = {"eu": "europe", "europe": "europe", "cis": "europe", "middle_east": "middle_east", "americas": "americas",
+        "asia": "asia"}
+NEVER = re.compile(r"(?!x)x")
+
+
+def build_parts(countries=()):
+    """part -> regex: the words above plus every catalog country (and profile country) of that part."""
+    from .config import catalog
+    pats = {k: [v] for k, v in PART_WORDS.items()}
+    for c in list(catalog().values()) + list(countries):
+        if c.get("part") in pats and c.get("location_regex"):
+            pats[c["part"]].append(c["location_regex"])
+    return {k: re.compile("|".join(f"(?:{p})" for p in v), I) for k, v in pats.items()}
+
+
+PARTS = build_parts()
+
+
+def parts_in(text):
+    """Parts of the world a location names: "Remote - US or Europe" → ["eu", "americas"]."""
+    return [k for k, rx in PARTS.items() if text and rx.search(text)]
+
+
+def remote_zones(profile):
+    """Zones a remote posting may name and still be open to the candidate: where they live, the target countries and
+    the office regions. Without any of these — Europe, the zone the rules were calibrated for."""
+    from .config import REGIONS
+    t, cand = profile.get("target") or {}, profile.get("candidate") or {}
+    countries = ([t["primary"]] if t.get("primary") else []) + list(t.get("countries") or [])
+    names = [str(cand.get("based_in") or "")] + [c["name"] for c in countries]
+    zones = {ZONE[p] for n in names for p in parts_in(n)}
+    zones |= {ZONE[c["part"]] for c in countries if c.get("part") in ZONE}
+    for o in t.get("offices") or []:
+        zones |= {ZONE[p] for p in REGIONS.get(o, ("", []))[1]}
+    return zones or {"europe"}
+
+
+def eu_citizen(profile):
+    """No visa needed and every target country (or, without targets, the home country) is in the EU: then "EU
+    citizens only" and "right to work in the EU" are no obstacle. Someone moving to Russia or Serbia without a visa
+    still lacks an EU passport."""
+    t, cand = profile.get("target") or {}, profile.get("candidate") or {}
+    if cand.get("needs_visa", True):
+        return False
+    countries = ([t["primary"]] if t.get("primary") else []) + list(t.get("countries") or [])
+    places = [c["name"] for c in countries] or [str(cand.get("based_in") or "")]
+    return all(p and "eu" in parts_in(p) for p in places)
+
+
+def offices_regex(tokens, countries=()):
+    """switches.offices → one regex: region names (eu, europe, cis…), catalog country codes, `world` = any place."""
+    from .config import REGIONS, catalog
+    cat = {**catalog(), **{c["code"]: c for c in countries}}
+    pats = []
+    for tok in tokens or []:
+        if tok == "world":
+            return re.compile(r"\w")
+        if tok in REGIONS:
+            pats += [PARTS[p].pattern for p in REGIONS[tok][1]]
+        elif tok in cat and cat[tok].get("location_regex"):
+            pats.append(cat[tok]["location_regex"])
+    return re.compile("|".join(f"(?:{p})" for p in pats), I) if pats else NEVER
+
+
+SENIOR = re.compile(r"\b(senior|sr\.?|lead|staff|principal|head of|architect|manager|tech lead|team lead|"
+                    r"старш\w*|ведущ\w*|главн\w*|руководител\w*|тимлид\w*|техлид\w*|архитектор\w*)\b", I)
+# «cтажер» with a Latin c happens on Habr Career
 JUNIOR_TITLE = re.compile(r"\b(junior|jr\.?|intern(ship)?|trainee|graduate|entry[- ]level|werkstudent|"
-                          r"stagiair|stage|student|apprentice|starter)\b", I)
+                          r"stagiair|stage|student|apprentice|starter|[сc]таж[её]р\w*|стажировк\w*|младш\w*)\b", I)
 MEDIOR = re.compile(r"\b(medior|mid[- ]level|associate)\b", I)
 
 CLEARANCE = re.compile(r"\b(security clearance|clearance|nato|aivd|mivd|veiligheidsonderzoek|vgb|"
@@ -81,20 +174,25 @@ TIME_ZONE = re.compile(r"time ?zones?|\b(cet|cest|eet|eest|gmt|utc|wet)\b|\butc 
 # a fully remote job for residents of one EU country, or a country other than the job's own. Checked 24.09 on 291
 # residency skips: "has to be in Portugal, hybrid", "strictly on-site in Sofia", "remote-first within Germany" open up;
 # "candidates based in Portugal or UK" for a Milan office, "work from Slovenia" for a French posting stay closed.
+# Russian quotes ("только для проживающих в РФ", "уже находиться в Сербии") for Habr Career and Telegram postings
+RU_RESIDENCY = (r"(кандидат\w*|соискател\w*|резидент\w*|проживающ\w*|жител\w*|находящ\w*)[^.;]{0,30}\bтолько\b|"
+                r"\b(только|исключительно)\b[^.;]{0,20}(кандидат\w*|соискател\w*|резидент\w*|проживающ\w*|жител\w*|"
+                r"находящ\w*)|\b(уже|в настоящее время|на данный момент)\b")
 RESIDENCY_HARD = re.compile(
     r"\b(candidates|applicants|residents|people|those)\b[^.;]{0,30}\bonly\b|"
     r"\b(only|exclusively)\b[^.;]{0,20}\b(candidates|applicants|residents|people|those)\b|"
     r"\b(currently|already|existing|local (candidates|applicants|hiring|hires|talent)|hire locally|citizen\w*|nationalit\w*|nationals?|passport|right to work|"
     r"work(ing)? permit|permit to work|residence permit|authori[sz]\w*|eligib\w*|visas?|sponsor\w*|relocat\w*|eu|eea|"
     r"european union|outside|not be considered|won'?t be considered|cittadinanza|nationalité|staatsangehörigkeit|"
-    r"staatsbürger\w*|nationaliteit|obywatel\w*|ciudadan\w*|cidadania|partita iva)\b", I)
+    r"staatsbürger\w*|nationaliteit|obywatel\w*|ciudadan\w*|cidadania|partita iva)\b|" + RU_RESIDENCY + "|"
+    r"\b(граждан\w*|внж|вид\w* на жительство|разрешени\w* на работу|виз\w*|спонсор\w*|релокац\w*)", I)
 # The same for a candidate who needs no visa (EU/EEA citizen): citizenship, permits and sponsorship stop mattering,
 # "already living there" and "local hiring" still close the job.
 RESIDENCY_HARD_NO_VISA = re.compile(
     r"\b(candidates|applicants|residents|people|those)\b[^.;]{0,30}\bonly\b|"
     r"\b(only|exclusively)\b[^.;]{0,20}\b(candidates|applicants|residents|people|those)\b|"
     r"\b(currently|already|existing|local (candidates|applicants|hiring|hires|talent)|hire locally|outside|"
-    r"not be considered|won'?t be considered)\b", I)
+    r"not be considered|won'?t be considered)\b|" + RU_RESIDENCY, I)
 REMOTE_JOB = re.compile(r"\b(fully|100 ?%) remote\b|\bremote[- ]only\b|\bremote (role|position|job)\b", I)
 NON_EU_PLACE = re.compile(r"\b(usa|u\.s\.|united states|north america|canada|india|bengaluru|bangalore|hyderabad|pune|"
                           r"chennai|uk|united kingdom|london|australia|singapore|brazil|mexico|israel|uae|dubai|turkey|"
@@ -149,10 +247,14 @@ OUTSOURCING = "penalize"   # outsourcing: skip | penalize (−1 fit) | ok — th
 PUBLIC_SECTOR = "skip"     # public_sector: skip | ok — clearance, defence, government
 SALARY_MIN = None          # None: visa floor of the country, in target countries only; a number: own minimum everywhere
 REMOTE_OK = True           # goal includes remote
-EU_OFFICES = True          # an office in another EU country is acceptable (the eu track)
+OFFICES = EU_LOC           # switches.offices: offices outside the target countries that count as a move (region track)
+REMOTE_ZONES = {"europe"}  # zones a remote posting may name (remote_zones)
+EU_CITIZEN = False         # no visa needed and every target is in the EU: "EU citizens only" is no obstacle
+CURRENCY = "EUR"           # switches.salary_currency: amounts shown to the person in this currency
+RATES = {"EUR": 1.0}       # EUR per unit (config.yaml currency_rates): salaries in other currencies are compared in EUR
 SETTING = "отсев по настройке"   # prefix of skips that come from a switch, not from a rule
-LANG_NAME_RU = {"nl": "нидерландском", "de": "немецком", "fr": "французском"}
-LANG_KEY = {"nl": "dutch", "de": "german", "fr": "french"}
+LANG_NAME_RU = {"nl": "нидерландском", "de": "немецком", "fr": "французском", "ru": "русском"}
+LANG_KEY = {"nl": "dutch", "de": "german", "fr": "french", "ru": "russian"}
 # target countries: primary first. Each: code, name, regex, floor (salary), sponsor (bool)
 COUNTRIES = [{"code": "nl", "name": "Netherlands", "regex": NL_LOC, "floor": None, "sponsor": True}]
 COUNTRY_CODES = {"nl"}
@@ -163,7 +265,8 @@ def configure(profile):
     """Rebuild role/target-specific rules from the normalized profile (config.load). Called by cli.load_cfg."""
     global RELEVANT_TITLE, NOT_RELEVANT_TITLE, STACK, NL_LOC, KNOWN_LANGS, COUNTRIES, COUNTRY_CODES, FOCUS, PRIMARY
     global PENALTIES, TITLE_BOOST, OFF_DOMAIN, OFF_DOMAIN_REASON, LEVEL, NEEDS_VISA, BASED_IN
-    global LANG_MODE, CONTRACT, AGENCIES, PUBLIC_SECTOR, SALARY_MIN, REMOTE_OK, EU_OFFICES, OUTSOURCING
+    global LANG_MODE, CONTRACT, AGENCIES, PUBLIC_SECTOR, SALARY_MIN, REMOTE_OK, OFFICES, OUTSOURCING, PARTS
+    global REMOTE_ZONES, EU_CITIZEN, CURRENCY, RATES
     role, target, cand = profile.get("role", {}), profile.get("target", {}), profile.get("candidate", {})
     countries = ([target["primary"]] if target.get("primary") else []) + list(target.get("countries") or [])
     needs_visa = bool(cand.get("needs_visa", True))      # without a visa the IND register means nothing
@@ -173,7 +276,8 @@ def configure(profile):
     COUNTRY_CODES = {c["code"] for c in COUNTRIES}
     PRIMARY = target["primary"]["code"] if target.get("primary") else ""
     # in_search_area keeps board postings in any target country; with no primary country nothing extra is needed
-    NL_LOC = COUNTRIES[0]["regex"] if COUNTRIES else re.compile(r"(?!x)x")
+    NL_LOC = COUNTRIES[0]["regex"] if COUNTRIES else NEVER
+    PARTS = build_parts([c for c in countries if c.get("part")])      # a country described in the profile joins too
     # what the profile says, also when it says nothing: no include = no title passes (check reports it),
     # no exclude = nothing excluded; never the QA lists this module starts with
     never = re.compile(r"(?!x)x")
@@ -203,8 +307,12 @@ def configure(profile):
     prefs = {**DEFAULT_PREFS, **(profile.get("prefs") or {})}
     LANG_MODE, CONTRACT, AGENCIES, PUBLIC_SECTOR = (prefs["other_language"], prefs["contract"], prefs["agencies"],
                                                     prefs["public_sector"])
-    SALARY_MIN, REMOTE_OK, EU_OFFICES = prefs["salary_min"], prefs["remote"], prefs["eu_offices"]
+    SALARY_MIN, REMOTE_OK = prefs["salary_min"], prefs["remote"]
     OUTSOURCING = prefs["outsourcing"]
+    OFFICES = offices_regex(target.get("offices", ["eu"]), countries)
+    REMOTE_ZONES = remote_zones(profile)
+    EU_CITIZEN = eu_citizen(profile)
+    CURRENCY, RATES = prefs.get("currency", "EUR"), {"EUR": 1.0, **(prefs.get("rates") or {})}
 
 
 FR_WORDS = {"le", "la", "les", "des", "une", "un", "et", "vous", "nous", "pour", "avec", "dans", "sur", "est", "sont",
@@ -212,7 +320,13 @@ FR_WORDS = {"le", "la", "les", "des", "une", "un", "et", "vous", "nous", "pour",
             "mission", "missions", "profil", "recherchons", "chez", "afin", "ainsi", "également", "qui", "que"}
 
 
+CYRILLIC = re.compile(r"[а-яё]", I)
+
+
 def detect_lang(text):
+    cyr = len(CYRILLIC.findall(text))
+    if cyr >= 100 and cyr > len(re.findall(r"[a-z]", text, I)):
+        return "ru"                      # Habr Career, Russian Telegram posts: Russian text with English tool names
     toks = re.findall(r"[a-zàâäèéêëîïôöûüçß']+", text.lower())
     if len(toks) < 15:
         return "unknown"
@@ -332,8 +446,10 @@ SAL = re.compile(
 # to €2,500" (Helsing), "jaaromzet van €1.267,4 miljoen" (Corbion) were read as monthly salaries and cut the posting.
 NOT_PAY_BEFORE = re.compile(r"(budget|allowance|bonus|relocation|learning|development|education|training|equipment|"
                             r"stipend|voucher|gym|vergoeding|toelage|tegoed|omzet|turnover|revenue|umsatz|funding|raised|"
-                            r"invest\w*|prime|indemnit\w*|chèque|ticket|meal)[^.\n]{0,40}$", I)
-NOT_PAY_AFTER = re.compile(r"^[\s,.]*(\d+\s*)?(miljoen|million|mln|mio|bn|billion|mld|milliard)", I)
+                            r"invest\w*|prime|indemnit\w*|chèque|ticket|meal|"
+                            r"бюджет|бонус\w*|преми\w*|компенсац\w*|релокац\w*|подъ[её]мн\w*|обучени\w*|выручк\w*|"
+                            r"оборот\w*|инвестиц\w*|привлек\w*)[^.\n]{0,40}$", I)
+NOT_PAY_AFTER = re.compile(r"^[\s,.]*(\d+\s*)?(miljoen|million|mln|mio|bn|billion|mld|milliard|млн|млрд|миллион\w*)", I)
 # The legal minimum of a collective agreement that Austrian postings must state ("minimum salary according to the
 # collective agreement … EUR 2,986. However, our package…"): a floor, not the offer. Checked 15.11 on a test setup for
 # Germany and Austria: Red Bull, Netconomy, Wien Energie were cut by the visa floor because of it.
@@ -341,9 +457,62 @@ COLLECTIVE_MINIMUM = re.compile(r"(collective[^.\n]{0,20}agreement|kollektivvert
                                 r"minimum (annual |monthly )?(gross )?salary)[^.\n]{0,70}$", I)
 
 
+# Salaries in other currencies: roubles after the number ("от 230 000 до 250 000 ₽", "250к руб."), dollars and pounds
+# before or after it ("$4,000-5,000", "3000 USD"). Converted to EUR by config.yaml currency_rates; a currency without
+# a rate is not read. Euro amounts stay with SAL, calibrated on Dutch and German postings.
+_NUMS = r"\d{1,3}(?:[ \u00a0\u202f.,]\d{3})+|\d+(?:[.,]\d+)?"
+_K = r"(?:\s?(?:k|к|тыс\.?))?"
+SAL_OTHER = re.compile(
+    rf"(?:(?P<pre>\$|£|usd\b|gbp\b)\s?(?P<a>{_NUMS})(?P<ak>{_K})(?:\s?(?:-|–|—|to|до)\s?(?:\$|£)?\s?(?P<b>{_NUMS})(?P<bk>{_K}))?"
+    rf"|(?P<c>{_NUMS})(?P<ck>{_K})(?:\s?(?:-|–|—|до|to)\s?(?P<d>{_NUMS})(?P<dk>{_K}))?\s?"
+    rf"(?P<post>₽|руб\w*\.?|р\.|rub\b|rur\b|\$|usd\b|долл\w*|£|gbp\b))"
+    rf"(?P<tail>[^.\n]{{0,30}})", I)
+OTHER_CODE = {"₽": "RUB", "р": "RUB", "руб": "RUB", "rub": "RUB", "rur": "RUB", "$": "USD", "usd": "USD", "дол": "USD",
+              "£": "GBP", "gbp": "GBP"}         # by the first three letters: «рублей», «долларов»
+PER_YEAR = re.compile(r"год|year|annum|annual|yearly|p\.?a\.?\b", I)
+ANNUAL_BEFORE = re.compile(r"annual|yearly|в год", I)      # "Annual compensation of $20,000–$30,000"
+PER_MONTH = re.compile(r"мес|month|/mo\b", I)
+
+
+def _other_amount(num, k):
+    v = _amount(num)
+    return v * 1000 if v is not None and k and k.strip() else v
+
+
+def parse_salary_other(text):
+    """Best monthly amount in EUR from roubles, dollars or pounds, or None."""
+    best = None
+    for m in SAL_OTHER.finditer(text):
+        before = text[max(0, m.start() - 60):m.start()]
+        if NOT_PAY_BEFORE.search(before):         # "300 млн ₽" never matches: the currency must follow the number
+            continue
+        sym = (m.group("pre") or m.group("post")).lower().rstrip(".")
+        code = OTHER_CODE.get(sym) or OTHER_CODE.get(sym[:3])
+        rate = RATES.get(code or "")
+        first, second = ("a", "b") if m.group("a") else ("c", "d")
+        lo = _other_amount(m.group(first), m.group(first + "k"))
+        hi = _other_amount(m.group(second), m.group(second + "k")) if m.group(second) else lo
+        if not rate or lo is None or hi is None:
+            continue
+        hi, tail = max(lo, hi), m.group("tail") or ""
+        if PER_YEAR.search(tail) or ANNUAL_BEFORE.search(before[-40:]) or (
+                code != "RUB" and not PER_MONTH.search(tail) and hi > 20000):
+            hi /= 12                          # roubles are monthly unless the year is named; dollars like euros
+        eur = hi * rate
+        if 300 <= eur <= 30000:
+            best = max(best or 0, eur)
+    return best
+
+
+def money(eur):
+    """An amount for the person: in their currency (switches.salary_currency), euros by default."""
+    from .config import money as fmt
+    return fmt(eur, CURRENCY, RATES)
+
+
 def parse_salary(text):
     """Return best-guess monthly gross (EUR) from free text, or None."""
-    best = None
+    best = parse_salary_other(text) if len(RATES) > 1 else None
     for m in SAL.finditer(text):
         # a bold label ends up on its own line in the page text: "Relocation support\n: up to €2,500" (Helsing, 15.11)
         before = re.sub(r"\n(?=\s*:)", " ", text[max(0, m.start() - 120):m.start()])
@@ -366,10 +535,17 @@ def parse_salary(text):
 
 def in_search_area(job):
     """A board posting worth keeping: no location, remote, a target country (by its own regex: Personio offices and
-    Teamtailor cities are often just "Berlin" or "Paris", which EU_LOC lacks) or anywhere else in the EU."""
+    Teamtailor cities are often just "Berlin" or "Paris", which EU_LOC lacks) or an office region (switches.offices)."""
     loc = job.location
-    return (not loc or job.remote or bool(NL_LOC.search(loc) or REMOTE.search(loc) or EU_LOC.search(loc))
+    return (not loc or job.remote or bool(NL_LOC.search(loc) or REMOTE.search(loc) or OFFICES.search(loc))
             or any(c["regex"].search(loc) for c in COUNTRIES if c["regex"]))
+
+
+def remote_reachable(location):
+    """A remote posting is open to the candidate unless its location names only parts of the world outside their
+    zones (REMOTE_ZONES): "Remote - US" is not for someone in Europe, "US or Europe" is, a bare "Remote" is."""
+    zones = {ZONE[p] for p in parts_in(location)}
+    return not zones or bool(zones & REMOTE_ZONES)
 
 
 def is_relevant_title(title):
@@ -397,6 +573,8 @@ def analyze(job, sponsors, cfg):
         unreadable.append("заголовок на немецком")
     elif NON_EN_TITLE.search(job.title) and not (KNOWN_LANGS - {"english", "russian", "ukrainian", "belarusian"}):
         unreadable.append("заголовок не на английском")      # with another European language the model decides
+    elif CYRILLIC.search(job.title) and not KNOWN_LANGS & {"russian", "ukrainian", "belarusian"}:
+        unreadable.append("заголовок на русском")
     dr = dutch_required(text) if not knows_nl else ""
     if dr:
         required.append(f"нужен нидерландский: «{dr}»")
@@ -459,9 +637,9 @@ def analyze(job, sponsors, cfg):
     else:                           # own minimum: everywhere, 0 = no cut
         floor, applies, whose = SALARY_MIN, bool(SALARY_MIN), "свой минимум"
     if job.salary_month and applies and job.salary_month < floor * 0.9:
-        skip.append(f"зарплата ~€{job.salary_month:.0f}/мес < порога €{floor} ({whose})")
+        skip.append(f"зарплата ~{money(job.salary_month)}/мес < порога {money(floor)} ({whose})")
     elif job.salary_month and applies and job.salary_month < floor:
-        reasons.append(f"зарплата ~€{job.salary_month:.0f}/мес на грани порога €{floor}: торговаться / индексация")
+        reasons.append(f"зарплата ~{money(job.salary_month)}/мес на грани порога {money(floor)}: торговаться / индексация")
 
     if AGENCY.search(job.description):
         reasons.append("агентство: конечный клиент не назван")
@@ -482,14 +660,14 @@ def analyze(job, sponsors, cfg):
     aliases = {normalize_simple(k): v for k, v in (cfg.get("sponsor_aliases") or {}).items()}
     lookup = aliases.get(normalize_simple(job.company), job.company)
     hits = sponsors.match(lookup) if sponsors else []
-    eu_remote = remote and not in_nl and not (NON_EU_REMOTE.search(job.location) and not EU_HINT.search(job.location))
+    open_remote = remote and not in_nl and remote_reachable(job.location)     # remote the candidate may take
     sponsor_bonus, nl_entity = 0, False
     if hits and in_nl and country["sponsor"]:
         job.sponsor_name, job.sponsor_kvk = hits[0]
         sponsor_bonus = 8 if hits[0][0].startswith("≈") else 15
     elif hits and in_nl:
         reasons.append(f"юрлицо в реестре IND есть ({hits[0][0]}), но вакансия в {country['name']}")
-    elif hits and eu_remote:
+    elif hits and open_remote:
         nl_entity = True
         reasons.append(f"NL-юрлицо в реестре IND: {hits[0][0]} — заход через remote-найм")
     elif hits:
@@ -547,19 +725,18 @@ def analyze(job, sponsors, cfg):
     if excluded_company(job.company, cfg):
         skip.append("компания в exclude_companies")
 
-    non_eu_remote = remote and not in_nl and NON_EU_REMOTE.search(job.location) and not EU_HINT.search(job.location)
-    if non_eu_remote:
-        reasons.append("remote вне Европы")
+    far_remote = remote and not in_nl and not open_remote
+    if far_remote:
+        reasons.append("remote в другой части света")
     if remote and not in_nl and job.description and HYBRID.search(job.description) and not FULLY_REMOTE.search(text):
         reasons.append("в тексте есть hybrid/office: проверить режим")   # flag only; the LLM decides work_mode
 
-    in_eu = bool(EU_LOC.search(job.location))
     if in_nl:
         job.track = country["code"]
-    elif remote and not non_eu_remote:
+    elif open_remote:
         job.track = "remote_nl" if nl_entity else "remote"
-    elif in_eu:
-        job.track = "eu"                       # on-site / hybrid elsewhere in the EU: relocation there is acceptable
+    elif OFFICES.search(job.location):
+        job.track = "region"                   # on-site / hybrid in an office region (switches.offices): a move there is fine
     else:
         job.track = "other"
     lm = None if m else LOCAL_ONLY.search(text)
@@ -583,10 +760,9 @@ def analyze(job, sponsors, cfg):
 
 
 def out_of_goal(job):
-    """A live posting on a track the goal leaves out (remote for relocation only, an office in an unlisted EU country
-    when eu_offices is off) is kept as `other`: stored, never assessed or sent."""
-    why = ("remote, а цель — только переезд" if job.track in ("remote", "remote_nl") and not REMOTE_OK else
-           "офис в другой стране ЕС, а она не в списке стран" if job.track == "eu" and not EU_OFFICES else "")
+    """A live posting on a track the goal leaves out (remote for relocation only) is kept as `other`: stored, never
+    assessed or sent."""
+    why = "remote, а цель — только переезд" if job.track in ("remote", "remote_nl") and not REMOTE_OK else ""
     if why and job.verdict == "live":
         job.verdict = "other"
         job.reasons.append(why)
@@ -603,8 +779,8 @@ def lives_there(text):
 
 
 def relocation_track(track):
-    """Tracks where the candidate would move to the job's country: target countries and on-site/hybrid EU."""
-    return track in COUNTRY_CODES or track == "eu"
+    """Tracks where the candidate would move to the job's country: target countries and the office regions."""
+    return track in COUNTRY_CODES or track == "region"
 
 
 def residency_blocks(quote, track, location):
@@ -612,18 +788,21 @@ def residency_blocks(quote, track, location):
     A requirement to live where the candidate already lives (candidate.based_in) is no obstacle on any track."""
     if lives_there(quote):
         return False
-    if not NEEDS_VISA and EU_ONLY.search(quote) and not NON_EU_PLACE.search(quote):
+    if EU_CITIZEN and EU_ONLY.search(quote) and not NON_EU_PLACE.search(quote):
         from .cvgen import country_of
         if not country_of(quote):           # "EU citizens only", "right to work in the EU": an EU citizen has it
             return False
     if not relocation_track(track):
         return True
     hard = RESIDENCY_HARD if NEEDS_VISA else RESIDENCY_HARD_NO_VISA
-    if hard.search(quote) or NON_EU_PLACE.search(quote) or (track == "eu" and REMOTE_JOB.search(quote)):
+    if hard.search(quote) or (track == "region" and REMOTE_JOB.search(quote)):
         return True
     from .cvgen import country_of
+    own = country_of(location) if track == "region" else next((c["name"] for c in COUNTRIES if c["code"] == track), None)
+    far = NON_EU_PLACE.search(quote)          # "based in Bengaluru" for a Kraków job; "based in Dubai" for a Dubai one is fine
+    if far and not (own and country_of(far.group(0)) == own):
+        return True
     named = country_of(quote)
-    own = country_of(location) if track == "eu" else next((c["name"] for c in COUNTRIES if c["code"] == track), None)
     return bool(named and own and named != own)
 
 

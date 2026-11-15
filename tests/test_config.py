@@ -81,7 +81,7 @@ def test_remote_only_goal():
     p = profile(target__country="none", target__countries=[])
     assert p["target"]["primary"] is None
     pen = config.default_location_penalty(p["target"])
-    assert pen["remote"] == 0 and pen["eu"] > 0
+    assert pen["remote"] == 0 and pen["region"] > 0
     assert config.default_linkedin_locations(p) == [
         {"name": "European Union", "remote": True, "max_pages": 50, "queries": p["role"]["queries"][:4]}]
     use(p)
@@ -131,6 +131,22 @@ def test_every_preset_is_complete(role):
     assert [t for t in bad if f.is_relevant_title(t)] == []
     assert "{" not in llm.SYSTEM.split("Цели кандидата")[0]          # the rubric template is fully filled
     assert p["role"]["name"] in llm.SYSTEM
+
+
+RUSSIAN_TITLES = {"qa": ("Тестировщик ПО", "Наставник на курс «Тестировщик»"),
+                  "backend": ("Python-разработчик", "1С-разработчик"),
+                  "frontend": ("Frontend-разработчик (React)", "iOS-разработчик"),
+                  "mobile": ("Разработчик Android", "Наставник по Android"),
+                  "devops": ("DevOps-инженер", "Инженер техподдержки"),
+                  "data": ("Аналитик данных", "Системный аналитик"),
+                  "product": ("Продакт-менеджер", "Проджект-менеджер")}
+
+
+@pytest.mark.parametrize("role", sorted(RUSSIAN_TITLES))
+def test_presets_read_russian_titles(role):
+    use(profile(role))
+    fits, other = RUSSIAN_TITLES[role]
+    assert f.is_relevant_title(fits) and not f.is_relevant_title(other)
 
 
 def test_off_domain_is_the_rescuable_skip_of_the_profile():
